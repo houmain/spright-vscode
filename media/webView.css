@@ -1,0 +1,95 @@
+body {
+}
+
+body.vscode-dark {
+}
+
+.inputs {
+  user-select: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+  --zoom: 1;
+  --pivot-size: calc(var(--zoom) * 2px);
+}
+
+.input {
+  background-color: var(--vscode-titleBar-activeBackground);
+  color: var(--vscode-titleBar-activeForeground);
+  border: 1px solid gray;
+  border-radius: 5px;
+  padding: 3px;
+}
+
+.text {
+  font-size: 1.25em;
+  padding-bottom: 4px;
+}
+
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.source {
+  position: relative;
+}
+
+.source .text {
+  font-size: 0.75em;
+}
+
+.source .frame {
+  position: relative;
+  display: inline-block;
+  border: 1px solid gray;
+  background: repeating-conic-gradient(#eee 0% 25%, #ddd 0% 50%) 50% / 16px 16px;
+}
+
+.sprites {
+  background-image: var(--filename);
+  background-size: cover;
+  image-rendering: pixelated;
+  width: calc(var(--width) * var(--zoom));
+  height: calc(var(--height) * var(--zoom));
+}
+
+.sprite {
+  position: absolute;
+  border: 1px solid red;
+  left: calc(var(--rect_x) * var(--zoom));
+  top: calc(var(--rect_y) * var(--zoom));
+  width: calc(var(--rect_w) * var(--zoom));
+  height: calc(var(--rect_h) * var(--zoom));
+  overflow: hidden;
+}
+
+.sprite:hover {
+  background-color: #0053ff2b;
+}
+
+.sprite .text {
+  position: absolute;
+  padding: 2px;
+  left: 0;
+  bottom: 0;
+  font-size: 1em;
+  font-weight: bold;
+  text-shadow: 1px 1px 0px black;
+  z-index: 10;
+  color: red;
+}
+
+.pivot {
+  position: absolute;
+  margin: calc(var(--pivot-size) / -2);
+  left: calc(var(--x) * var(--zoom));
+  top: calc(var(--y) * var(--zoom));
+  width: var(--pivot-size);
+  height: var(--pivot-size);
+  border-radius: 100%;
+  background-color: rgba(255, 255, 0, 0.5);
+  border: 1px solid black;
+}

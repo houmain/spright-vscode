@@ -1,0 +1,83 @@
+{
+  "name": "spright",
+  "displayName": "Spright Configuration Editor",
+  "description": "Editor for spright configurations",
+  "version": "0.0.1",
+  "publisher": "Albert Kalchmair",
+  "license": "GPL",
+  "homepage": "https://github.com/houmain/spright-vscode",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/houmain/spright-vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/houmain/spright-vscode/issues"
+  },
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "keywords": [
+    "spritesheet"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "icon": "icon.png",
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "spright",
+        "extensions": [
+          ".conf"
+        ],
+        "aliases": [
+          "Spright Configuration",
+          "spright"
+        ],
+        "configuration": "./src/spright-language.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "spright",
+        "scopeName": "source.spright",
+        "path": "./src/spright-grammar.json"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "spright.editor",
+        "displayName": "Spright Editor",
+        "priority": "option",
+        "selector": [
+          {
+            "filenamePattern": "*.conf"
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsup",
+    "lint": "eslint \"src/**/*.ts\"",
+    "watch": "tsup --watch"
+  },
+  "devDependencies": {
+    "@types/node": "^16.18.14",
+    "@types/vscode": "^1.73.0",
+    "@typescript-eslint/eslint-plugin": "^5.42.0",
+    "@typescript-eslint/parser": "^5.42.0",
+    "eslint": "^8.26.0",
+    "tsup": "^6.6.3",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "vscode": "^1.1.37",
+    "wasync": "^0.1.1"
+  }
+}

@@ -1,0 +1,57 @@
+{
+	"name": "spright",
+	"scopeName": "source.spright",
+	"patterns": [
+		{
+			"name": "comment.line.number-sign.spright",
+			"begin": "^[ \\t]*#",
+			"end": "$"
+		},
+		{
+			"name": "constant.numeric.decimal.spright",
+			"match": "\\b[0-9]+\\.[0-9]*\\b"
+		},
+		{
+			"name": "constant.numeric.decimal.spright",
+			"match": "(\\.([0-9]+))\\b"
+		},
+		{
+			"name": "constant.numeric.decimal.spright",
+			"match": "\\b([0-9]+)\\b"
+		},
+		{
+			"name": "keyword.control.spright",
+			"match": "^[ \\t]*(sheet|input|output|sprite)\\b"
+		},
+		{
+			"name": "support.constant.media.spright",
+			"match": "^[ \\t]*([a-z][a-z\\-]*)\\b"
+		},
+		{
+			"name": "entity.name.tag.spright",
+			"match": "\\b([a-zA-Z_][a-zA-Z0-9_\\-]*)\\b"
+		},
+		{
+			"name": "string.quoted.double.spright",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.spright",
+					"match": "\\\\."
+				}
+			]
+		},
+		{
+			"name": "string.quoted.single.spright",
+			"begin": "'",
+			"end": "'",
+			"patterns": [
+				{
+					"name": "constant.character.escape.spright",
+					"match": "\\\\."
+				}
+			]
+		}
+	]
+}

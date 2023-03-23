@@ -1,0 +1,123 @@
+import * as vscode from "vscode";
+
+type EnumValue = {
+  name: string;
+  description: string;
+};
+
+type Definition = {
+  subject: string;
+  args: string;
+  description: string;
+  enumValues: EnumValue[];
+};
+
+function priorize(name: string): number | undefined {
+  switch (name) {
+    case "sprite":
+      return 1;
+    case "sheet":
+    case "input":
+      return 2;
+  }
+}
+
+function findEnumValues(text: string) {
+  // - _value_: description<br/>
+  const values: EnumValue[] = [];
+  for (const match of text.matchAll(/-\s*_([a-z-]+)_\s*:([^<]*)<br\/>/g))
+    values.push({
+      name: match[1],
+      description: match[2],
+    });
+  return values;
+}
+
+function parseReadmeMarkdown(text: string) {
+  text = text.replace(/[\n\r]+/g, "\n");
+  const chapterOffset = text.search("Input definition reference\n---");
+  const chapterEnd = text.indexOf("Output description\n---", chapterOffset);
+  const tableOffset = text.indexOf("| **sheet**", chapterOffset);
+  const lines = text.substring(tableOffset, chapterEnd).trim().split("\n");
+  const definitions: { [k: string]: Definition } = {};
+  for (const line of lines) {
+    const c = line.split("|");
+    c.shift();
+    definitions[c[0].replace(/[*]/g, "").trim()] = {
+      subject: c[1].trim(),
+      args: c[2].trim().replace(/<br\/>/, " "),
+      description: c[3].trim(),
+      enumValues: findEnumValues(c[3]),
+    };
+  }
+  return definitions;
+}
+
+function parseDocumentation(text: string) {
+  const doc = new vscode.MarkdownString();
+  doc.supportHtml = true;
+  doc.appendMarkdown(text);
+  return doc;
+}
+
+export class SprightCompletionItemProvider {
+  definitions: { [k: string]: Definition } = {};
+
+  constructor(context: vscode.ExtensionContext) {
+    const file = vscode.workspace.fs
+      .readFile(vscode.Uri.file(context.asAbsolutePath("./bin/README.md")))
+      .then((x) => (this.definitions = parseReadmeMarkdown(x.toString())));
+  }
+
+  provideCompletionItems(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken,
+    context: vscode.CompletionContext
+  ) {
+    const items: vscode.CompletionItem[] = [];
+    const linePrefix = document
+      .lineAt(position)
+      .text.substring(0, position.character)
+      .trimStart()
+      .split(/\s+/);
+
+    if (linePrefix.length == 1) {
+      for (const name in this.definitions) {
+        const definition = this.definitions[name];
+        const c = new vscode.CompletionItem(name);
+        c.detail = "Arguments: " + definition.args;
+        c.documentation = parseDocumentation(definition.description);
+        c.kind = vscode.CompletionItemKind.Field;
+        const priority = priorize(name);
+        if (priority) {
+          c.sortText = priority.toString() + " " + name;
+          c.preselect = true;
+        }
+        if (definition.args.length > 0) {
+          c.insertText = name + " ";
+          if (definition.enumValues.length > 0) {
+            c.command = {
+              command: "editor.action.triggerSuggest",
+              title: "Complete arguments...",
+            };
+          }
+        } else {
+          c.insertText = name;
+        }
+        items.push(c);
+      }
+    } else {
+      const definition = this.definitions[linePrefix[0]];
+      if (definition) {
+        for (const value of definition.enumValues) {
+          const c = new vscode.CompletionItem(value.name);
+          c.kind = vscode.CompletionItemKind.Value;
+          c.documentation = parseDocumentation(value.description);
+          items.push(c);
+        }
+      }
+    }
+    return items;
+  }
+}

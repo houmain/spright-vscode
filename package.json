@@ -1,9 +1,9 @@
 {
-  "name": "spright",
+  "name": "spright-vscode",
   "displayName": "Spright Configuration Editor",
   "description": "Editor for spright configurations",
   "version": "0.0.1",
-  "publisher": "Albert Kalchmair",
+  "publisher": "houmain",
   "license": "GPL",
   "homepage": "https://github.com/houmain/spright-vscode",
   "repository": {
@@ -65,19 +65,20 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsup",
     "lint": "eslint \"src/**/*.ts\"",
-    "watch": "tsup --watch"
+    "watch": "tsup --watch",
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/node": "^16.18.14",
-    "@types/vscode": "^1.73.0",
+    "@types/vscode": "^1.74.0",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
     "@typescript-eslint/parser": "^5.42.0",
+    "@vscode/vsce": "^2.18.0",
     "eslint": "^8.26.0",
     "tsup": "^6.6.3",
     "typescript": "^4.9.4"
   },
   "dependencies": {
-    "vscode": "^1.1.37",
     "wasync": "^0.1.1"
   }
 }

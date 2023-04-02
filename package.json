@@ -77,8 +77,5 @@
     "eslint": "^8.26.0",
     "tsup": "^6.6.3",
     "typescript": "^4.9.4"
-  },
-  "dependencies": {
-    "wasync": "^0.1.1"
   }
 }

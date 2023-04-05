@@ -3,8 +3,10 @@ import { SprightEditorProvider } from "./sprightEditorProvider";
 import { SprightDocumentSymbolProvider } from "./sprightDocumentSymbolProvider";
 import { SprightCompletionItemProvider } from "./sprightCompletionItemProvider";
 
+const sprightVersion = "2.3.1";
+
 export function activate(context: vscode.ExtensionContext) {
-  const sprightEditor = new SprightEditorProvider(context);
+  const sprightEditor = new SprightEditorProvider(context, sprightVersion);
   context.subscriptions.push(
     vscode.window.registerCustomEditorProvider("spright.editor", sprightEditor)
   );

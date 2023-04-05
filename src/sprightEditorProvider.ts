@@ -1,11 +1,13 @@
 import * as vscode from "vscode";
 import * as util from "./util";
-import * as spright from "./spright";
+import { SprightProvider } from "./sprightProvider";
+import { Spright, Result as SprightResult } from "./spright";
 
 class SprightEditor {
   private readonly context: vscode.ExtensionContext;
   private readonly webview: vscode.Webview;
   private readonly document: vscode.TextDocument;
+  private readonly spright: Spright;
   private diagnosticsCollection?: vscode.DiagnosticCollection;
   private diagnostics: vscode.Diagnostic[] = [];
   private updatingWebview = false;
@@ -14,11 +16,13 @@ class SprightEditor {
   constructor(
     context: vscode.ExtensionContext,
     document: vscode.TextDocument,
-    webviewPanel: vscode.WebviewPanel
+    webviewPanel: vscode.WebviewPanel,
+    spright: Spright
   ) {
     this.context = context;
     this.document = document;
     this.webview = webviewPanel.webview;
+    this.spright = spright;
 
     this.webview.options = {
       enableScripts: true,
@@ -44,9 +48,9 @@ class SprightEditor {
           return;
 
         case "execSpright":
-          spright
+          this.spright
             .autocompleteConfig(this.document.fileName, e.text)
-            .then((output: spright.Result) => {
+            .then((output: SprightResult) => {
               console.log(output);
             });
           return;
@@ -84,7 +88,7 @@ class SprightEditor {
   }
 
   private async getAutocompletedConfig() {
-    const result = await spright.autocompleteConfig(
+    const result = await this.spright.autocompleteConfig(
       this.document.fileName,
       this.document.getText()
     );
@@ -93,7 +97,7 @@ class SprightEditor {
   }
 
   private async getOutputDescription(config: string) {
-    const result = await spright.getOutputDescription(
+    const result = await this.spright.getOutputDescription(
       this.document.fileName,
       config
     );
@@ -210,20 +214,38 @@ class SprightEditor {
   }
 }
 
-export class SprightEditorProvider implements vscode.CustomTextEditorProvider {
-  constructor(private readonly context: vscode.ExtensionContext) {
-    const sprightBinaryPath =
-      `bin/spright-${process.platform}-${process.arch}` +
-      (process.platform === "win32" ? ".exe" : "");
-    spright.setBinaryPath(this.context.asAbsolutePath(sprightBinaryPath));
+class NoSprightEditor {
+  constructor(private readonly webviewPanel: vscode.WebviewPanel) {}
+
+  public async initialize() {
+    this.webviewPanel.webview.html = "NO";
   }
+}
+
+export class SprightEditorProvider implements vscode.CustomTextEditorProvider {
+  constructor(
+    private readonly context: vscode.ExtensionContext,
+    private readonly sprightVersion: string
+  ) {}
 
   public async resolveCustomTextEditor(
     document: vscode.TextDocument,
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken
   ): Promise<void> {
-    const editor = new SprightEditor(this.context, document, webviewPanel);
-    return editor.initialize();
+    try {
+      const spright = await new SprightProvider(this.context).get(
+        this.sprightVersion
+      );
+      return new SprightEditor(
+        this.context,
+        document,
+        webviewPanel,
+        spright
+      ).initialize();
+    } catch (ex) {
+      console.log(`Downloading spright ${this.sprightVersion} failed`, ex);
+      return new NoSprightEditor(webviewPanel).initialize();
+    }
   }
 }

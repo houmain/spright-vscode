@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "es2020",
     "target": "es2020",
-    "lib": ["es2020"],
+    "lib": ["dom", "es2020"],
     "outDir": "out",
     "sourceMap": true,
     "strict": true,
     "rootDir": "src",
-    "moduleResolution": "node",
+    "moduleResolution":"node",
     "esModuleInterop": true
   },
-  "include": ["src/*.ts"]
+  "include": ["src/**/*.ts"]
 }

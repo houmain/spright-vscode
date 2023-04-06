@@ -22,7 +22,7 @@
   "categories": [
     "Other"
   ],
-  "icon": "icon.png",
+  "icon": "media/icon.png",
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
@@ -36,14 +36,14 @@
           "Spright Configuration",
           "spright"
         ],
-        "configuration": "./src/spright-language.json"
+        "configuration": "./data/spright-language.json"
       }
     ],
     "grammars": [
       {
         "language": "spright",
         "scopeName": "source.spright",
-        "path": "./src/spright-grammar.json"
+        "path": "./data/spright-grammar.json"
       }
     ],
     "customEditors": [

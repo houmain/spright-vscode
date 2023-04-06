@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.languages.registerCompletionItemProvider(
       "spright",
-      new SprightCompletionItemProvider(context)
+      new SprightCompletionItemProvider(context, sprightVersion)
     )
   );
 }

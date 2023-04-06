@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as util from "./util";
 import { SprightProvider } from "./sprightProvider";
 import { Spright, Result as SprightResult } from "./spright";
+import { arch, platform } from "os";
 
 class SprightEditor {
   private readonly context: vscode.ExtensionContext;
@@ -214,14 +215,6 @@ class SprightEditor {
   }
 }
 
-class NoSprightEditor {
-  constructor(private readonly webviewPanel: vscode.WebviewPanel) {}
-
-  public async initialize() {
-    this.webviewPanel.webview.html = "NO";
-  }
-}
-
 export class SprightEditorProvider implements vscode.CustomTextEditorProvider {
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -234,18 +227,16 @@ export class SprightEditorProvider implements vscode.CustomTextEditorProvider {
     _token: vscode.CancellationToken
   ): Promise<void> {
     try {
-      const spright = await new SprightProvider(this.context).get(
-        this.sprightVersion
-      );
+      const sprightProvider = new SprightProvider(this.context);
+      const spright = await sprightProvider.getSpright(this.sprightVersion);
       return new SprightEditor(
         this.context,
         document,
         webviewPanel,
         spright
       ).initialize();
-    } catch (ex) {
-      console.log(`Downloading spright ${this.sprightVersion} failed`, ex);
-      return new NoSprightEditor(webviewPanel).initialize();
+    } catch {
+      webviewPanel.webview.html = `Downloading spright ${this.sprightVersion} for ${process.platform}/${process.arch} failed.`;
     }
   }
 }

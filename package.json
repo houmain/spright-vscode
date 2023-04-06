@@ -2,7 +2,7 @@
   "name": "spright-vscode",
   "displayName": "Spright Configuration Editor",
   "description": "Editor for spright configurations",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "houmain",
   "license": "GPL",
   "homepage": "https://github.com/houmain/spright-vscode",

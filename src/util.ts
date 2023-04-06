@@ -60,6 +60,15 @@ export function makeDirectory(directory: string) {
   });
 }
 
+export function readTextFile(filename: string) {
+  return new Promise<string>((resolve, reject) => {
+    fs.readFile(filename, (err, buffer) => {
+      if (err === null) return resolve(buffer.toString());
+      reject();
+    });
+  });
+}
+
 export function extractZip(filename: string, directory: string) {
   console.log(`Extracting '${filename}' to '${directory}'`);
   return extract.default(filename, { dir: directory });

@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { SprightProvider } from "./sprightProvider";
 
 type EnumValue = {
   name: string;
@@ -61,20 +62,35 @@ function parseDocumentation(text: string) {
 }
 
 export class SprightCompletionItemProvider {
-  definitions: { [k: string]: Definition } = {};
+  private readonly context: vscode.ExtensionContext;
+  private readonly sprightVersion: string;
+  private definitions?: { [k: string]: Definition };
 
-  constructor(context: vscode.ExtensionContext) {
-    const file = vscode.workspace.fs
-      .readFile(vscode.Uri.file(context.asAbsolutePath("./bin/README.md")))
-      .then((x) => (this.definitions = parseReadmeMarkdown(x.toString())));
+  constructor(context: vscode.ExtensionContext, sprightVersion: string) {
+    this.context = context;
+    this.sprightVersion = sprightVersion;
   }
 
-  provideCompletionItems(
+  private async loadDefinitions() {
+    try {
+      const sprightProvider = new SprightProvider(this.context);
+      const readme = await sprightProvider.getReadme(this.sprightVersion);
+      return parseReadmeMarkdown(readme);
+    } catch (ex) {
+      console.log("Loading definitions failed: ", ex);
+      return {};
+    }
+  }
+
+  async provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
     token: vscode.CancellationToken,
     context: vscode.CompletionContext
   ) {
+    if (!this.definitions) {
+      this.definitions = await this.loadDefinitions();
+    }
     const items: vscode.CompletionItem[] = [];
     const linePrefix = document
       .lineAt(position)

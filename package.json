@@ -63,9 +63,9 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsup",
+    "compile": "tsc -p ./ && tsup",
     "lint": "eslint \"src/**/*.ts\"",
-    "watch": "tsup --watch",
+    "watch": "tsc -w -p ./",
     "package": "vsce package"
   },
   "devDependencies": {

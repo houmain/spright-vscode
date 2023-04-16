@@ -177,4 +177,9 @@ export class Config {
     if (id2) return id2;
     return "sprite";
   }
+
+  public getParameterColumn(item: Subject) {
+    const line = this.lines[item.lineNo];
+    return line.level + line.definition.length + 1;
+  }
 }

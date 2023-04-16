@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import * as vscode from "vscode";
 import { Spright } from "./spright";
 import * as util from "./util";

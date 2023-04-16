@@ -2,7 +2,17 @@ import * as vscode from "vscode";
 import * as util from "./util";
 import { SprightProvider } from "./sprightProvider";
 import { Spright, Result as SprightResult } from "./spright";
-import { arch, platform } from "os";
+
+async function openInTextEditor(filename: vscode.Uri, range: vscode.Range) {
+  const document = await vscode.workspace.openTextDocument(filename);
+  return vscode.window.showTextDocument(document, {
+    viewColumn:
+      vscode.window.activeTextEditor?.document == document
+        ? vscode.ViewColumn.Active
+        : vscode.ViewColumn.Beside,
+    selection: new vscode.Selection(range.start, range.end),
+  });
+}
 
 class SprightEditor {
   private readonly context: vscode.ExtensionContext;
@@ -42,18 +52,18 @@ class SprightEditor {
       changeDocumentSubscription.dispose();
     });
 
-    this.webview.onDidReceiveMessage((e) => {
+    this.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
-        case "updateConfig":
-          this.updateConfig(e.text);
+        case "autocomplete": {
+          const config = await this.getAutocompletedConfig();
+          this.updateConfig(config);
           return;
-
-        case "execSpright":
-          this.spright
-            .autocompleteConfig(this.document.fileName, e.text)
-            .then((output: SprightResult) => {
-              console.log(output);
-            });
+        }
+        case "selectLine":
+          await openInTextEditor(
+            this.document.uri,
+            new vscode.Range(e.lineNo, e.columnNo || 0, e.lineNo, 1000000)
+          );
           return;
       }
     });

@@ -1,4 +1,5 @@
-import { Config } from "./sprightConfig";
+import { Config } from "./Config";
+import { Description } from "./Description";
 
 function appendElement(parent: HTMLElement, type: string, className: string) {
   const div = document.createElement(type);
@@ -6,57 +7,6 @@ function appendElement(parent: HTMLElement, type: string, className: string) {
   parent.appendChild(div);
   return div;
 }
-
-type Input = {
-  filename: string;
-  sourceIndices: number[];
-};
-
-type Source = {
-  index: number;
-  filename: string;
-  path: string;
-  width: number;
-  height: number;
-  spriteIndices: number[];
-  uri: string;
-};
-
-type Point = {
-  x: number;
-  y: number;
-};
-
-type Rect = {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-};
-
-type Sprite = {
-  id: string;
-  index: number;
-  inputSpriteIndex: number;
-  pivot: Point;
-  rect: Rect;
-  trimmedRect: Rect;
-  rotated: boolean;
-  sourceIndex: number;
-  sourceRect: Rect;
-  trimmedSourceRect: Rect;
-  sliceIndex: number;
-  sliceSpriteIndex: number;
-  data: object;
-  tags: object;
-  vertices: Point[];
-};
-
-type Description = {
-  inputs: Input[];
-  sources: Source[];
-  sprites: Sprite[];
-};
 
 type State = {
   config: string;
@@ -87,8 +37,7 @@ export class SprightEditor {
     if (n > 0 && direction == -1) --n;
     if (n < levels.length - 1 && direction == 1) ++n;
     this.zoom = levels[n];
-    if (this.applyZoom)
-      this.applyZoom();
+    if (this.applyZoom) this.applyZoom();
   }
 
   onMessage(message: any) {
@@ -125,15 +74,20 @@ export class SprightEditor {
   private rebuildView() {
     const inputsDiv = document.createElement("div");
     inputsDiv.className = "inputs";
-    this.applyZoom = () => { inputsDiv.style.setProperty("--zoom", this.zoom.toString()); };
+    this.applyZoom = () => {
+      inputsDiv.style.setProperty("--zoom", this.zoom.toString());
+    };
     this.applyZoom();
 
+    let inputIndex = 0;
     for (const input of this.description.inputs) {
+      const configInput = this.config.inputs[inputIndex++];
       const inputDiv = appendElement(inputsDiv, "div", "input");
 
       const textDiv = appendElement(inputDiv, "div", "text");
       textDiv.innerText = input.filename;
 
+      let spriteIndex = 0;
       const sourcesDiv = appendElement(inputDiv, "div", "sources");
       for (const index of input.sourceIndices) {
         const source = this.description.sources[index];
@@ -151,6 +105,7 @@ export class SprightEditor {
 
         for (const index of source.spriteIndices) {
           const sprite = this.description.sprites[index];
+          const configSprite = configInput.sprites[spriteIndex++];
           const spriteDiv = appendElement(spritesDiv, "div", "sprite");
           const rect = sprite.trimmedSourceRect;
           spriteDiv.style.setProperty("--rect_x", rect.x + "px");
@@ -159,27 +114,21 @@ export class SprightEditor {
           spriteDiv.style.setProperty("--rect_h", rect.h + "px");
 
           const pivotDiv = appendElement(spritesDiv, "div", "pivot");
-          pivotDiv.style.setProperty("--x", (rect.x + sprite.pivot.x) + "px");
-          pivotDiv.style.setProperty("--y", (rect.y + sprite.pivot.y) + "px");
+          pivotDiv.style.setProperty("--x", rect.x + sprite.pivot.x + "px");
+          pivotDiv.style.setProperty("--y", rect.y + sprite.pivot.y + "px");
 
           const textDiv = appendElement(spriteDiv, "div", "text");
           textDiv.innerText = sprite.id;
+
+          spriteDiv.addEventListener("dblclick", () => {
+            this.postMessage({
+              type: "selectLine",
+              lineNo: configSprite.lineNo,
+              columnNo: this.config.getParameterColumn(configSprite),
+            });
+          });
         }
       }
-
-      /*
-      const deleteButton = appendElement(inputDiv, "button", "delete-button");
-      deleteButton.addEventListener("click", () => {
-        //this.postMessage({
-        //  type: "updateConfig",
-        //  text: "# " + this.config.toString(),
-        //});
-        this.postMessage({
-          type: "execSpright",
-          text: this.config.toString(),
-        });
-      });
-*/
     }
 
     this.content.innerHTML = "";

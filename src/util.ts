@@ -64,7 +64,7 @@ export function readTextFile(filename: string) {
   return new Promise<string>((resolve, reject) => {
     fs.readFile(filename, (err, buffer) => {
       if (err === null) return resolve(buffer.toString());
-      reject();
+      reject("file not found");
     });
   });
 }

@@ -91,7 +91,7 @@ class SprightEditor {
         this.updateWebviewOnceMore = false;
         this.updateWebviewDebounced();
       }
-    }, 100);
+    }, 50);
   }
 
   public async initialize() {
@@ -112,11 +112,12 @@ class SprightEditor {
       this.document.fileName,
       config
     );
+    this.parseErrorOutput(result.stderr);
     return JSON.parse(result.stdout);
   }
 
   private async updateWebview() {
-    const config = await this.getAutocompletedConfig();
+    const config = this.document.getText();
     const description = await this.getOutputDescription(config);
 
     const getUri = (path: string, filename: string) => {

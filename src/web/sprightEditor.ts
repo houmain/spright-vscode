@@ -87,6 +87,13 @@ export class SprightEditor {
       const textDiv = appendElement(inputDiv, "div", "text");
       textDiv.innerText = input.filename;
 
+      textDiv.addEventListener("dblclick", () => {
+        this.postMessage({
+          type: "autocomplete",
+          filename: input.filename,
+        });
+      });
+
       let spriteIndex = 0;
       const sourcesDiv = appendElement(inputDiv, "div", "sources");
       for (const index of input.sourceIndices) {

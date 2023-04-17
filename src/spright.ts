@@ -15,6 +15,7 @@ export class Spright {
   }
 
   private async exec(workingDirectory: string, args: string[], input: string) {
+    console.log("Executing spright", args);
     return new Promise<Result>((resolve, reject) => {
       let stdout = "";
       let stderr = "";

@@ -73,3 +73,40 @@ export function extractZip(filename: string, directory: string) {
   console.log(`Extracting '${filename}' to '${directory}'`);
   return extract.default(filename, { dir: directory });
 }
+
+export function getLineSeparator(text: string) {
+  const firstNewLine = text.indexOf("\n");
+  const firstReturn = text.indexOf("\r");
+  if (firstNewLine >= 0 && firstReturn >= 0)
+    return firstNewLine < firstReturn ? "\n\r" : "\r\n";
+  return firstReturn >= 0 ? "\r" : "\n";
+}
+
+export function splitLines(text: string) {
+  return text.split(getLineSeparator(text));
+}
+
+export function getDifferingRange(current: string[], source: string[]) {
+  const firstDiff = (() => {
+    const n = Math.min(source.length, current.length);
+    for (let i = 0; i < n; i++) {
+      if (source[i] != current[i]) {
+        return i;
+      }
+    }
+    return n;
+  })();
+
+  if (firstDiff != source.length || firstDiff != current.length) {
+    const [lastDiffSource, lastDiffCurrent] = (() => {
+      for (let i = source.length - 1, j = current.length - 1; ; --i, --j)
+        if (i < firstDiff || j < firstDiff || source[i] != current[j])
+          return [i + 1, j + 1];
+    })();
+    return {
+      first: firstDiff,
+      last: lastDiffCurrent,
+      diff: source.splice(firstDiff, lastDiffSource - firstDiff),
+    };
+  }
+}

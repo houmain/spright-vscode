@@ -15,6 +15,7 @@ body.vscode-dark {
 }
 
 .input {
+  position: relative;
   background-color: var(--vscode-titleBar-activeBackground);
   color: var(--vscode-titleBar-activeForeground);
   border: 1px solid gray;

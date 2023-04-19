@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as util from "./util";
 import { SprightProvider } from "./sprightProvider";
-import { Spright, Result as SprightResult } from "./spright";
+import { Spright } from "./spright";
 
 async function openInTextEditor(filename: vscode.Uri, range: vscode.Range) {
   const document = await vscode.workspace.openTextDocument(filename);
@@ -213,14 +213,16 @@ class SprightEditor {
   }
 
   private updateConfig(config: string) {
+    const currentLines = util.splitLines(this.document.getText());
+    const lineSeparator = util.getLineSeparator(config);
+    const configLines = config.split(lineSeparator);
+    const range = util.getDifferingRange(currentLines, configLines);
+    if (!range) return;
     const edit = new vscode.WorkspaceEdit();
-
-    // Just replace the entire document every time
-    // A more complete extension should compute minimal edits instead.
     edit.replace(
       this.document.uri,
-      new vscode.Range(0, 0, this.document.lineCount, 0),
-      config
+      new vscode.Range(range.first, 0, range.last, 0),
+      range.diff.join(lineSeparator)
     );
     return vscode.workspace.applyEdit(edit);
   }

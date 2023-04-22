@@ -26,21 +26,22 @@ export type Rect = {
 };
 
 export type Sprite = {
-  id: string;
   index: number;
+  id: string;
   inputSpriteIndex: number;
-  pivot: Point;
-  rect: Rect;
-  trimmedRect: Rect;
-  rotated: boolean;
   sourceIndex: number;
   sourceRect: Rect;
-  trimmedSourceRect: Rect;
-  sliceIndex: number;
-  sliceSpriteIndex: number;
   data: object;
   tags: object;
-  vertices: Point[];
+
+  sliceIndex?: number;
+  sliceSpriteIndex?: number;
+  rect?: Rect;
+  pivot?: Point;
+  rotated?: boolean;
+  trimmedRect?: Rect;
+  trimmedSourceRect?: Rect;
+  vertices?: Point[];
 };
 
 export type Description = {

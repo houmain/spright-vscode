@@ -15,7 +15,7 @@ export class Spright {
   }
 
   private async exec(workingDirectory: string, args: string[], input: string) {
-    console.log("Executing spright", args);
+    const begin = Date.now();
     return new Promise<Result>((resolve, reject) => {
       let stdout = "";
       let stderr = "";
@@ -29,6 +29,8 @@ export class Spright {
         return reject(err);
       });
       child.on("close", (code: number) => {
+        const duration = (Date.now() - begin) / 1000.0;
+        console.log("Executing spright", args, "took", duration, "seconds");
         return resolve({
           code,
           stdout,
@@ -38,18 +40,43 @@ export class Spright {
     });
   }
 
-  async autocompleteConfig(configFilename: string, config: string) {
+  async autocompleteConfig(
+    configFilename: string,
+    config: string,
+    pattern?: string
+  ) {
     return this.exec(
       dirname(configFilename),
-      ["-i", "stdin", "-o", "stdout", "-a", "-w"],
+      [
+        "-m",
+        "complete",
+        pattern ? pattern : "*",
+        "-i",
+        "stdin",
+        "-o",
+        "stdout",
+        "-w",
+      ],
       config
     );
   }
 
-  async getOutputDescription(configFilename: string, config: string) {
+  async getDescription(
+    configFilename: string,
+    config: string,
+    describeInput: boolean
+  ) {
     return this.exec(
       dirname(configFilename),
-      ["-i", "stdin", "-o", "stdout", "-d", "-w"],
+      [
+        "-m",
+        describeInput ? "describe-input" : "describe",
+        "-i",
+        "stdin",
+        "-o",
+        "stdout",
+        "-w",
+      ],
       config
     );
   }

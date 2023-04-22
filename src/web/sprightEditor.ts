@@ -114,16 +114,19 @@ export class SprightEditor {
           const sprite = this.description.sprites[index];
           const configSprite = configInput.sprites[spriteIndex++];
           const spriteDiv = appendElement(spritesDiv, "div", "sprite");
-          const rect = sprite.trimmedSourceRect;
+          const rect = sprite.trimmedSourceRect
+            ? sprite.trimmedSourceRect
+            : sprite.sourceRect;
           spriteDiv.style.setProperty("--rect_x", rect.x + "px");
           spriteDiv.style.setProperty("--rect_y", rect.y + "px");
           spriteDiv.style.setProperty("--rect_w", rect.w + "px");
           spriteDiv.style.setProperty("--rect_h", rect.h + "px");
 
-          const pivotDiv = appendElement(spritesDiv, "div", "pivot");
-          pivotDiv.style.setProperty("--x", rect.x + sprite.pivot.x + "px");
-          pivotDiv.style.setProperty("--y", rect.y + sprite.pivot.y + "px");
-
+          if (sprite.pivot) {
+            const pivotDiv = appendElement(spritesDiv, "div", "pivot");
+            pivotDiv.style.setProperty("--x", rect.x + sprite.pivot.x + "px");
+            pivotDiv.style.setProperty("--y", rect.y + sprite.pivot.y + "px");
+          }
           const textDiv = appendElement(spriteDiv, "div", "text");
           textDiv.innerText = sprite.id;
 

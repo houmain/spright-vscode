@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as util from "./util";
 import { SprightProvider } from "./sprightProvider";
 import { Spright } from "./spright";
+import { describe } from "node:test";
 
 async function openInTextEditor(filename: vscode.Uri, range: vscode.Range) {
   const document = await vscode.workspace.openTextDocument(filename);
@@ -55,7 +56,7 @@ class SprightEditor {
     this.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
         case "autocomplete": {
-          const config = await this.getAutocompletedConfig();
+          const config = await this.getAutocompletedConfig(e.filename);
           this.updateConfig(config);
           return;
         }
@@ -98,19 +99,21 @@ class SprightEditor {
     await this.updateWebview();
   }
 
-  private async getAutocompletedConfig() {
+  private async getAutocompletedConfig(pattern?: string) {
     const result = await this.spright.autocompleteConfig(
       this.document.fileName,
-      this.document.getText()
+      this.document.getText(),
+      pattern
     );
     this.parseErrorOutput(result.stderr);
     return result.stdout;
   }
 
-  private async getOutputDescription(config: string) {
-    const result = await this.spright.getOutputDescription(
+  private async getDescription(config: string, describeInput: boolean) {
+    const result = await this.spright.getDescription(
       this.document.fileName,
-      config
+      config,
+      describeInput
     );
     this.parseErrorOutput(result.stderr);
     return JSON.parse(result.stdout);
@@ -118,7 +121,7 @@ class SprightEditor {
 
   private async updateWebview() {
     const config = this.document.getText();
-    const description = await this.getOutputDescription(config);
+    const description = await this.getDescription(config, true);
 
     const getUri = (path: string, filename: string) => {
       const uri = this.webview.asWebviewUri(

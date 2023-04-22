@@ -1,3 +1,5 @@
+import * as util from "util";
+
 type ConfigLine = {
   line: string;
   level: number;
@@ -25,7 +27,7 @@ function splitLines(source: string) {
     let i = pos;
     for (pos; i < line.length; ++i)
       if (line[i] == " " || line[i] == "\t") return i;
-    return i - 1;
+    return i;
   }
 
   const lines: Array<ConfigLine> = [];

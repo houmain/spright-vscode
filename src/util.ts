@@ -86,6 +86,12 @@ export function splitLines(text: string) {
   return text.split(getLineSeparator(text));
 }
 
+export function toNewLineSeparators(text: string) {
+  const lineSeparator = getLineSeparator(text);
+  if (lineSeparator == "\n") return text;
+  return text.split(lineSeparator).join("\n");
+}
+
 export function getDifferingRange(current: string[], source: string[]) {
   const firstDiff = (() => {
     const n = Math.min(source.length, current.length);

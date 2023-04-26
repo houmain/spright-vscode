@@ -1,5 +1,3 @@
-import * as util from "util";
-
 type ConfigLine = {
   line: string;
   level: number;

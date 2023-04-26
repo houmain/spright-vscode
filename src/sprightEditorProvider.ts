@@ -120,7 +120,7 @@ class SprightEditor {
   }
 
   private async updateWebview() {
-    const config = this.document.getText();
+    const config = util.toNewLineSeparators(this.document.getText());
     const description = await this.getDescription(config, true);
 
     const getUri = (path: string, filename: string) => {
@@ -216,16 +216,23 @@ class SprightEditor {
   }
 
   private updateConfig(config: string) {
-    const currentLines = util.splitLines(this.document.getText());
-    const lineSeparator = util.getLineSeparator(config);
-    const configLines = config.split(lineSeparator);
+    const current = this.document.getText();
+    const lineSeparator = util.getLineSeparator(current);
+    const currentLines = current.split(lineSeparator);
+    const configLines = util.splitLines(config);
     const range = util.getDifferingRange(currentLines, configLines);
     if (!range) return;
     const edit = new vscode.WorkspaceEdit();
+
+    const prependNewline =
+      !current.endsWith(lineSeparator) && range.first == currentLines.length;
+    const appendNewline = range.last != currentLines.length;
     edit.replace(
       this.document.uri,
       new vscode.Range(range.first, 0, range.last, 0),
-      range.diff.join(lineSeparator)
+      (prependNewline ? lineSeparator : "") +
+        range.diff.join(lineSeparator) +
+        (appendNewline ? lineSeparator : "")
     );
     return vscode.workspace.applyEdit(edit);
   }

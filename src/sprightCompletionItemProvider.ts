@@ -36,8 +36,8 @@ function findEnumValues(text: string) {
 
 function parseReadmeMarkdown(text: string) {
   text = text.replace(/[\n\r]+/g, "\n");
-  const chapterOffset = text.search("Input definition reference\n---");
-  const chapterEnd = text.indexOf("Output description\n---", chapterOffset);
+  const chapterOffset = text.search("## Input definition reference");
+  const chapterEnd = text.indexOf("## Output description", chapterOffset);
   const tableOffset = text.indexOf("| **sheet**", chapterOffset);
   const lines = text.substring(tableOffset, chapterEnd).trim().split("\n");
   const definitions: { [k: string]: Definition } = {};

@@ -112,7 +112,7 @@ export class SprightEditor {
 
         for (const index of source.spriteIndices) {
           const sprite = this.description.sprites[index];
-          const configSprite = configInput.sprites[spriteIndex++];
+          const configSprite = configInput?.sprites[spriteIndex++];
           const spriteDiv = appendElement(spritesDiv, "div", "sprite");
           const rect = sprite.trimmedSourceRect
             ? sprite.trimmedSourceRect
@@ -130,13 +130,15 @@ export class SprightEditor {
           const textDiv = appendElement(spriteDiv, "div", "text");
           textDiv.innerText = sprite.id;
 
-          spriteDiv.addEventListener("dblclick", () => {
-            this.postMessage({
-              type: "selectLine",
-              lineNo: configSprite.lineNo,
-              columnNo: this.config.getParameterColumn(configSprite),
+          if (configSprite) {
+            spriteDiv.addEventListener("dblclick", () => {
+              this.postMessage({
+                type: "selectLine",
+                lineNo: configSprite.lineNo,
+                columnNo: this.config.getParameterColumn(configSprite),
+              });
             });
-          });
+          }
         }
       }
     }

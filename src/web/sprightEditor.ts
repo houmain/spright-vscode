@@ -8,26 +8,40 @@ function appendElement(parent: HTMLElement, type: string, className: string) {
   return div;
 }
 
+function addClickHandler(element: HTMLElement, func: () => void) {
+  element.addEventListener("click", (ev: MouseEvent) => {
+    func();
+    ev.stopPropagation();
+  });
+}
+
+function addDoubleClickHandler(element: HTMLElement, func: () => void) {
+  element.addEventListener("dblclick", (ev: MouseEvent) => {
+    func();
+    ev.stopPropagation();
+  });
+}
+
 type State = {
   config: string;
   description: Description;
 };
 
 export class SprightEditor {
-  private content: HTMLElement;
-  private updateState: any;
-  private postMessage: any;
   private config: Config;
   private description: Description;
   private zoom = 2;
   private applyZoom?: () => void;
 
-  constructor(content: HTMLElement, updateState: any, postMessage: any) {
-    this.content = content;
-    this.updateState = updateState;
-    this.postMessage = postMessage;
+  constructor(
+    private toolbar: HTMLElement,
+    private content: HTMLElement,
+    private updateState: any,
+    private postMessage: any
+  ) {
     this.config = new Config("");
     this.description = {} as Description;
+    this.rebuildToolbar();
   }
 
   onZoom(direction: number) {
@@ -71,6 +85,30 @@ export class SprightEditor {
     this.rebuildView();
   }
 
+  private rebuildToolbar() {
+    const itemsDiv = document.createElement("div");
+    itemsDiv.className = "items";
+
+    const refreshButton = appendElement(itemsDiv, "button", "refresh");
+    refreshButton.innerText = "auto";
+    addClickHandler(refreshButton, () => {
+      this.postMessage({
+        type: "autocomplete",
+      });
+    });
+
+    const zoomLabel = appendElement(itemsDiv, "label", "zoom-label");
+    zoomLabel.innerText = "Zoom:";
+    const zoom = appendElement(itemsDiv, "select", "zoom") as HTMLSelectElement;
+    for (let i = 1; i <= 4; ++i) {
+      const option = appendElement(zoom, "option", "zoom") as HTMLOptionElement;
+      option.value = i.toString();
+      option.text = i * 100 + "%";
+    }
+    this.toolbar.innerHTML = "";
+    this.toolbar.appendChild(itemsDiv);
+  }
+
   private rebuildView() {
     const inputsDiv = document.createElement("div");
     inputsDiv.className = "inputs";
@@ -84,15 +122,28 @@ export class SprightEditor {
       const configInput = this.config.inputs[inputIndex++];
       const inputDiv = appendElement(inputsDiv, "div", "input");
 
-      const textDiv = appendElement(inputDiv, "div", "text");
-      textDiv.innerText = input.filename;
+      if (configInput)
+        addDoubleClickHandler(inputDiv, () => {
+          this.postMessage({
+            type: "selectLine",
+            lineNo: configInput.lineNo,
+            columnNo: this.config.getParameterColumn(configInput),
+          });
+        });
 
-      textDiv.addEventListener("dblclick", () => {
+      const titleDiv = appendElement(inputDiv, "div", "title");
+
+      const refreshButton = appendElement(titleDiv, "button", "refresh");
+      refreshButton.innerText = "auto";
+      addClickHandler(refreshButton, () => {
         this.postMessage({
           type: "autocomplete",
           filename: input.filename,
         });
       });
+
+      const textDiv = appendElement(titleDiv, "div", "text");
+      textDiv.innerText = input.filename;
 
       let spriteIndex = 0;
       const sourcesDiv = appendElement(inputDiv, "div", "sources");
@@ -130,15 +181,14 @@ export class SprightEditor {
           const textDiv = appendElement(spriteDiv, "div", "text");
           textDiv.innerText = sprite.id;
 
-          if (configSprite) {
-            spriteDiv.addEventListener("dblclick", () => {
+          if (configSprite)
+            addDoubleClickHandler(spriteDiv, () => {
               this.postMessage({
                 type: "selectLine",
                 lineNo: configSprite.lineNo,
                 columnNo: this.config.getParameterColumn(configSprite),
               });
             });
-          }
         }
       }
     }

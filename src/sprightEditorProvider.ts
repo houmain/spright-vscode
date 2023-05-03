@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 import * as util from "./util";
 import { SprightProvider } from "./sprightProvider";
 import { Spright } from "./spright";
-import { describe } from "node:test";
 
 async function openInTextEditor(filename: vscode.Uri, range: vscode.Range) {
   const document = await vscode.workspace.openTextDocument(filename);
@@ -197,22 +196,23 @@ class SprightEditor {
     // Use a nonce to whitelist which scripts can be run
     const nonce = util.getNonce();
     return `
-			<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${this.webview.cspSource}; style-src ${this.webview.cspSource}; script-src 'nonce-${nonce}';">
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<link href="${styleResetUri}" rel="stylesheet" />
-				<link href="${styleVSCodeUri}" rel="stylesheet" />
-				<link href="${styleMainUri}" rel="stylesheet" />
-				<title>Spright Configuration Editor</title>
-			</head>
-			<body>
-				<div id="content"></div>
-				<script nonce="${nonce}" src="${scriptUri}"></script>
-			</body>
-			</html>`;
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${this.webview.cspSource}; style-src ${this.webview.cspSource}; script-src 'nonce-${nonce}';">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="${styleResetUri}" rel="stylesheet" />
+        <link href="${styleVSCodeUri}" rel="stylesheet" />
+        <link href="${styleMainUri}" rel="stylesheet" />
+        <title>Spright Configuration Editor</title>
+      </head>
+      <body>
+        <div id="toolbar"></div>
+        <div id="content"></div>
+        <script nonce="${nonce}" src="${scriptUri}"></script>
+      </body>
+      </html>`;
   }
 
   private updateConfig(config: string) {

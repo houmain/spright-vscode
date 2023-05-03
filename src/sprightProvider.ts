@@ -2,6 +2,8 @@ import * as vscode from "vscode";
 import { Spright } from "./spright";
 import * as util from "./util";
 
+const developmentSprightDirectory = ``;
+
 const platformSuffix = (() => {
   if (process.platform === "win32" && process.arch == "x64") return "win64";
   if (process.platform === "linux" && process.arch == "x64") return "Linux";
@@ -34,6 +36,9 @@ export class SprightProvider {
   }
 
   private getSprightDirectoryUri(version: string) {
+    if (this.context.extensionMode != vscode.ExtensionMode.Production)
+      return vscode.Uri.file(developmentSprightDirectory);
+
     return vscode.Uri.joinPath(
       this.getStorageUri(),
       `spright-${version}-${platformSuffix}`

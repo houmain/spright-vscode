@@ -7,6 +7,8 @@ type Scope = {
 
 function getSymbolKind(definition: string): vscode.SymbolKind | undefined {
   switch (definition) {
+    case "glob":
+      return vscode.SymbolKind.Function;
     case "input":
       return vscode.SymbolKind.Function;
     case "output":

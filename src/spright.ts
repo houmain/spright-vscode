@@ -45,20 +45,9 @@ export class Spright {
     config: string,
     pattern?: string
   ) {
-    return this.exec(
-      dirname(configFilename),
-      [
-        "-m",
-        "complete",
-        pattern ? pattern : "*",
-        "-i",
-        "stdin",
-        "-o",
-        "stdout",
-        "-w",
-      ],
-      config
-    );
+    const args = ["-i", "stdin", "-o", "stdout", "-w", "-m", "complete"];
+    if (pattern) args.push(pattern);
+    return this.exec(dirname(configFilename), args, config);
   }
 
   async getDescription(

@@ -1,5 +1,5 @@
 :root {
-  --container-paddding: 20px;
+  --container-paddding: 8px;
   --input-padding-vertical: 6px;
   --input-padding-horizontal: 4px;
   --input-margin-vertical: 4px;
@@ -7,7 +7,6 @@
 }
 
 body {
-  padding: 0 var(--container-paddding);
   color: var(--vscode-foreground);
   font-size: var(--vscode-font-size);
   font-weight: var(--vscode-font-weight);
@@ -47,7 +46,6 @@ code {
 button {
   border: none;
   padding: var(--input-padding-vertical) var(--input-padding-horizontal);
-  width: 100%;
   text-align: center;
   outline: 1px solid transparent;
   outline-offset: 2px !important;
@@ -74,9 +72,8 @@ button.secondary:hover {
 }
 
 input:not([type="checkbox"]),
+select,
 textarea {
-  display: block;
-  width: 100%;
   border: none;
   font-family: var(--vscode-font-family);
   padding: var(--input-padding-vertical) var(--input-padding-horizontal);

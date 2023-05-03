@@ -4,6 +4,22 @@ body {
 body.vscode-dark {
 }
 
+#toolbar {
+  padding: 4px;
+  position: relative;
+  width: 100%;
+  background: #f0f0f0;
+}
+
+#toolbar * {
+  margin-right: 4px;
+}
+
+#content {
+  padding: var(--container-paddding);
+  position: relative;
+}
+
 .inputs {
   user-select: none;
   display: flex;
@@ -23,9 +39,17 @@ body.vscode-dark {
   padding: 3px;
 }
 
+.title {
+  padding-bottom: 2px;
+}
+
+.title .text {
+  display: inline;
+}
+
 .text {
   font-size: 1.25em;
-  padding-bottom: 4px;
+  padding: 4px;
 }
 
 .sources {

@@ -4,8 +4,10 @@ declare const acquireVsCodeApi: any;
 
 (function () {
   const vscode = acquireVsCodeApi();
+  const toolbar = document.querySelector("#toolbar") as HTMLElement;
   const content = document.querySelector("#content") as HTMLElement;
   const sprightEditor = new SprightEditor(
+    toolbar,
     content,
     (state: any) => vscode.setState(state),
     (message: any) => vscode.postMessage(message)
@@ -16,8 +18,7 @@ declare const acquireVsCodeApi: any;
   });
 
   window.addEventListener("wheel", (event) => {
-    if (event.ctrlKey)
-      sprightEditor.onZoom(-Math.sign(event.deltaY));
+    if (event.ctrlKey) sprightEditor.onZoom(-Math.sign(event.deltaY));
   });
 
   // Webviews are normally torn down when not visible and re-created when they become visible again.

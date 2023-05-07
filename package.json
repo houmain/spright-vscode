@@ -50,7 +50,7 @@
       {
         "viewType": "spright.editor",
         "displayName": "Spright Editor",
-        "priority": "option",
+        "priority": "default",
         "selector": [
           {
             "filenamePattern": "*.conf"

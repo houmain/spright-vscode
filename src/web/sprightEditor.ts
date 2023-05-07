@@ -147,8 +147,8 @@ export class SprightEditor {
 
       let spriteIndex = 0;
       const sourcesDiv = appendElement(inputDiv, "div", "sources");
-      for (const index of input.sourceIndices) {
-        const source = this.description.sources[index];
+      for (const inputSource of input.sources) {
+        const source = this.description.sources[inputSource.index];
         const sourceDiv = appendElement(sourcesDiv, "div", "source");
 
         if (source.filename !== input.filename) {
@@ -161,7 +161,7 @@ export class SprightEditor {
         spritesDiv.style.setProperty("--width", source.width + "px");
         spritesDiv.style.setProperty("--height", source.height + "px");
 
-        for (const index of source.spriteIndices) {
+        for (const index of inputSource.spriteIndices) {
           const sprite = this.description.sprites[index];
           const configSprite = configInput?.sprites[spriteIndex++];
           const spriteDiv = appendElement(spritesDiv, "div", "sprite");

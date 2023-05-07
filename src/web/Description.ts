@@ -1,6 +1,12 @@
+
+export type InputSource = {
+  index: number;
+  spriteIndices: number[];
+};
+
 export type Input = {
   filename: string;
-  sourceIndices: number[];
+  sources: InputSource[];
 };
 
 export type Source = {
@@ -9,7 +15,6 @@ export type Source = {
   path: string;
   width: number;
   height: number;
-  spriteIndices: number[];
   uri: string;
 };
 
@@ -28,6 +33,7 @@ export type Rect = {
 export type Sprite = {
   index: number;
   id: string;
+  inputIndex: number;
   inputSpriteIndex: number;
   sourceIndex: number;
   sourceRect: Rect;

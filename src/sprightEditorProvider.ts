@@ -59,6 +59,10 @@ class SprightEditor {
           this.updateConfig(config);
           return;
         }
+        case "update": {
+          await this.updateOutput();
+          return;
+        }
         case "selectLine":
           await openInTextEditor(
             this.document.uri,
@@ -91,7 +95,7 @@ class SprightEditor {
         this.updateWebviewOnceMore = false;
         this.updateWebviewDebounced();
       }
-    }, 50);
+    }, 450);
   }
 
   public async initialize() {
@@ -103,6 +107,15 @@ class SprightEditor {
       this.document.fileName,
       this.document.getText(),
       pattern
+    );
+    this.parseErrorOutput(result.stderr);
+    return result.stdout;
+  }
+
+  private async updateOutput() {
+    const result = await this.spright.updateOutput(
+      this.document.fileName,
+      this.document.getText()
     );
     this.parseErrorOutput(result.stderr);
     return result.stdout;

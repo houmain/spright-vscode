@@ -5,8 +5,11 @@ body.vscode-dark {
 }
 
 #toolbar {
+  position: fixed;
+  top: 0;
+  margin: 0;
+  z-index: 20;
   padding: 4px;
-  position: relative;
   width: 100%;
   background: #f0f0f0;
 }
@@ -18,6 +21,7 @@ body.vscode-dark {
 #content {
   padding: var(--container-paddding);
   position: relative;
+  margin-top: 38px;
 }
 
 .inputs {

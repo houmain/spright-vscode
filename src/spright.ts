@@ -50,6 +50,11 @@ export class Spright {
     return this.exec(dirname(configFilename), args, config);
   }
 
+  async updateOutput(configFilename: string, config: string) {
+    const args = ["-i", "stdin"];
+    return this.exec(dirname(configFilename), args, config);
+  }
+
   async getDescription(
     configFilename: string,
     config: string,

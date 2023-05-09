@@ -89,11 +89,19 @@ export class SprightEditor {
     const itemsDiv = document.createElement("div");
     itemsDiv.className = "items";
 
-    const refreshButton = appendElement(itemsDiv, "button", "refresh");
-    refreshButton.innerText = "auto";
-    addClickHandler(refreshButton, () => {
+    const completeButton = appendElement(itemsDiv, "button", "refresh");
+    completeButton.innerText = "auto";
+    addClickHandler(completeButton, () => {
       this.postMessage({
         type: "autocomplete",
+      });
+    });
+
+    const updateButton = appendElement(itemsDiv, "button", "update");
+    updateButton.innerText = "update";
+    addClickHandler(updateButton, () => {
+      this.postMessage({
+        type: "update",
       });
     });
 

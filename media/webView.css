@@ -5,6 +5,7 @@ body.vscode-dark {
 }
 
 #toolbar {
+  user-select: none;
   position: fixed;
   top: 0;
   margin: 0;
@@ -16,6 +17,11 @@ body.vscode-dark {
 
 #toolbar * {
   margin-right: 4px;
+}
+
+#toolbar input[type="checkbox"] {
+  vertical-align: middle;
+  margin-left: 4px;
 }
 
 #content {
@@ -44,19 +50,19 @@ body.vscode-dark {
 }
 
 .title {
-  padding-bottom: 2px;
+}
+
+.text {
+  font-size: 1em;
 }
 
 .title .text {
   display: inline;
-}
-
-.text {
-  font-size: 1.25em;
-  padding: 4px;
+  padding-left: 4px;
 }
 
 .sources {
+  margin-top: 3px;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -64,10 +70,6 @@ body.vscode-dark {
 
 .source {
   position: relative;
-}
-
-.source .text {
-  font-size: 0.75em;
 }
 
 .source .frame {
@@ -111,6 +113,14 @@ body.vscode-dark {
   color: red;
 }
 
+.trimmed-rect {
+  position: absolute;
+  border: 1px solid blue;
+  left: calc(var(--rect_x) * var(--zoom));
+  top: calc(var(--rect_y) * var(--zoom));
+  width: calc(var(--rect_w) * var(--zoom));
+  height: calc(var(--rect_h) * var(--zoom));
+}
 .pivot {
   position: absolute;
   margin: calc(var(--pivot-size) / -2);

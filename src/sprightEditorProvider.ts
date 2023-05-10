@@ -133,7 +133,7 @@ class SprightEditor {
 
   private async updateWebview() {
     const config = util.toNewLineSeparators(this.document.getText());
-    const description = await this.getDescription(config, true);
+    const description = await this.getDescription(config, false);
 
     const getUri = (path: string, filename: string) => {
       const uri = this.webview.asWebviewUri(

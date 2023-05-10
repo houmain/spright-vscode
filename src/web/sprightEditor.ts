@@ -1,11 +1,30 @@
 import { Config } from "./Config";
-import { Description } from "./Description";
+import { Description, Rect } from "./Description";
+
+const zoomLevels = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16];
 
 function appendElement(parent: HTMLElement, type: string, className: string) {
   const div = document.createElement(type);
   div.className = className;
   parent.appendChild(div);
   return div;
+}
+
+function appendRect(parent: HTMLElement, rect: Rect, className: string) {
+  const rectDiv = appendElement(parent, "div", className);
+  rectDiv.style.setProperty("--rect_x", rect.x + "px");
+  rectDiv.style.setProperty("--rect_y", rect.y + "px");
+  rectDiv.style.setProperty("--rect_w", rect.w + "px");
+  rectDiv.style.setProperty("--rect_h", rect.h + "px");
+  return rectDiv;
+}
+
+function appendCheckbox(parent: HTMLElement, className: string, text: string) {
+  const input = appendElement(parent, "input", className) as HTMLInputElement;
+  input.type = "checkbox";
+  const label = appendElement(parent, "label", className) as HTMLLabelElement;
+  label.textContent = text;
+  return input;
 }
 
 function addClickHandler(element: HTMLElement, func: () => void) {
@@ -30,8 +49,12 @@ type State = {
 export class SprightEditor {
   private config: Config;
   private description: Description;
-  private zoom = 2;
+  private zoomLevel = 2;
   private applyZoom?: () => void;
+  private zoom!: HTMLSelectElement;
+  private showId!: HTMLInputElement;
+  private showPivot!: HTMLInputElement;
+  private showTrimmedRect!: HTMLInputElement;
 
   constructor(
     private toolbar: HTMLElement,
@@ -44,14 +67,18 @@ export class SprightEditor {
     this.rebuildToolbar();
   }
 
+  updateZoomSelection() {
+    this.zoom.selectedIndex = zoomLevels.indexOf(this.zoomLevel);
+  }
+
   onZoom(direction: number) {
-    const levels = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16];
-    let n = levels.indexOf(this.zoom);
+    let n = zoomLevels.indexOf(this.zoomLevel);
     if (n == -1) n = 2;
     if (n > 0 && direction == -1) --n;
-    if (n < levels.length - 1 && direction == 1) ++n;
-    this.zoom = levels[n];
+    if (n < zoomLevels.length - 1 && direction == 1) ++n;
+    this.zoomLevel = zoomLevels[n];
     if (this.applyZoom) this.applyZoom();
+    this.updateZoomSelection();
   }
 
   onMessage(message: any) {
@@ -89,14 +116,6 @@ export class SprightEditor {
     const itemsDiv = document.createElement("div");
     itemsDiv.className = "items";
 
-    const completeButton = appendElement(itemsDiv, "button", "refresh");
-    completeButton.innerText = "auto";
-    addClickHandler(completeButton, () => {
-      this.postMessage({
-        type: "autocomplete",
-      });
-    });
-
     const updateButton = appendElement(itemsDiv, "button", "update");
     updateButton.innerText = "update";
     addClickHandler(updateButton, () => {
@@ -105,14 +124,40 @@ export class SprightEditor {
       });
     });
 
+    const completeButton = appendElement(itemsDiv, "button", "complete");
+    completeButton.innerText = "auto";
+    addClickHandler(completeButton, () => {
+      this.postMessage({
+        type: "autocomplete",
+      });
+    });
+
     const zoomLabel = appendElement(itemsDiv, "label", "zoom-label");
-    zoomLabel.innerText = "Zoom:";
+    zoomLabel.innerText = "  Zoom:";
     const zoom = appendElement(itemsDiv, "select", "zoom") as HTMLSelectElement;
-    for (let i = 1; i <= 4; ++i) {
+    for (const level of zoomLevels) {
       const option = appendElement(zoom, "option", "zoom") as HTMLOptionElement;
-      option.value = i.toString();
-      option.text = i * 100 + "%";
+      option.value = level.toString();
+      option.text = Math.round(level * 100) + "%";
     }
+    this.zoom = zoom;
+    this.updateZoomSelection();
+
+    const showLabel = appendElement(itemsDiv, "label", "show-label");
+    showLabel.innerText = "  Show:";
+
+    this.showId = appendCheckbox(itemsDiv, "show-id", "id");
+    this.showId.checked = true;
+    this.showTrimmedRect = appendCheckbox(
+      itemsDiv,
+      "show-trimmed-rect",
+      "trimmed-rect"
+    );
+    this.showPivot = appendCheckbox(itemsDiv, "show-pivot", "pivot");
+    addClickHandler(this.showId, () => this.rebuildView());
+    addClickHandler(this.showTrimmedRect, () => this.rebuildView());
+    addClickHandler(this.showPivot, () => this.rebuildView());
+
     this.toolbar.innerHTML = "";
     this.toolbar.appendChild(itemsDiv);
   }
@@ -121,7 +166,7 @@ export class SprightEditor {
     const inputsDiv = document.createElement("div");
     inputsDiv.className = "inputs";
     this.applyZoom = () => {
-      inputsDiv.style.setProperty("--zoom", this.zoom.toString());
+      inputsDiv.style.setProperty("--zoom", this.zoomLevel.toString());
     };
     this.applyZoom();
 
@@ -153,50 +198,53 @@ export class SprightEditor {
       const textDiv = appendElement(titleDiv, "div", "text");
       textDiv.innerText = input.filename;
 
-      let spriteIndex = 0;
-      const sourcesDiv = appendElement(inputDiv, "div", "sources");
-      for (const inputSource of input.sources) {
-        const source = this.description.sources[inputSource.index];
-        const sourceDiv = appendElement(sourcesDiv, "div", "source");
+      if (input.sources.length > 0) {
+        let spriteIndex = 0;
+        const sourcesDiv = appendElement(inputDiv, "div", "sources");
+        for (const inputSource of input.sources) {
+          const source = this.description.sources[inputSource.index];
+          const sourceDiv = appendElement(sourcesDiv, "div", "source");
 
-        if (source.filename !== input.filename) {
-          const textDiv = appendElement(sourceDiv, "div", "text");
-          textDiv.innerText = source.filename;
-        }
-        const spritesFrameDiv = appendElement(sourceDiv, "div", "frame");
-        const spritesDiv = appendElement(spritesFrameDiv, "div", "sprites");
-        spritesDiv.style.setProperty("--filename", `url('${source.uri}'`);
-        spritesDiv.style.setProperty("--width", source.width + "px");
-        spritesDiv.style.setProperty("--height", source.height + "px");
+          const spritesFrameDiv = appendElement(sourceDiv, "div", "frame");
+          const spritesDiv = appendElement(spritesFrameDiv, "div", "sprites");
+          spritesDiv.style.setProperty("--filename", `url('${source.uri}'`);
+          spritesDiv.style.setProperty("--width", source.width + "px");
+          spritesDiv.style.setProperty("--height", source.height + "px");
 
-        for (const index of inputSource.spriteIndices) {
-          const sprite = this.description.sprites[index];
-          const configSprite = configInput?.sprites[spriteIndex++];
-          const spriteDiv = appendElement(spritesDiv, "div", "sprite");
-          const rect = sprite.trimmedSourceRect
-            ? sprite.trimmedSourceRect
-            : sprite.sourceRect;
-          spriteDiv.style.setProperty("--rect_x", rect.x + "px");
-          spriteDiv.style.setProperty("--rect_y", rect.y + "px");
-          spriteDiv.style.setProperty("--rect_w", rect.w + "px");
-          spriteDiv.style.setProperty("--rect_h", rect.h + "px");
+          for (const index of inputSource.spriteIndices) {
+            const sprite = this.description.sprites[index];
+            const configSprite = configInput?.sprites[spriteIndex++];
 
-          if (sprite.pivot) {
-            const pivotDiv = appendElement(spritesDiv, "div", "pivot");
-            pivotDiv.style.setProperty("--x", rect.x + sprite.pivot.x + "px");
-            pivotDiv.style.setProperty("--y", rect.y + sprite.pivot.y + "px");
-          }
-          const textDiv = appendElement(spriteDiv, "div", "text");
-          textDiv.innerText = sprite.id;
+            if (this.showTrimmedRect.checked && sprite.trimmedSourceRect) {
+              appendRect(spritesDiv, sprite.trimmedSourceRect, "trimmed-rect");
+            }
 
-          if (configSprite)
-            addDoubleClickHandler(spriteDiv, () => {
-              this.postMessage({
-                type: "selectLine",
-                lineNo: configSprite.lineNo,
-                columnNo: this.config.getParameterColumn(configSprite),
+            const spriteDiv = appendRect(
+              spritesDiv,
+              sprite.sourceRect,
+              "sprite"
+            );
+
+            if (this.showPivot.checked && sprite.pivot) {
+              const rect = sprite.sourceRect;
+              const pivotDiv = appendElement(spritesDiv, "div", "pivot");
+              pivotDiv.style.setProperty("--x", rect.x + sprite.pivot.x + "px");
+              pivotDiv.style.setProperty("--y", rect.y + sprite.pivot.y + "px");
+            }
+            if (this.showId.checked) {
+              const textDiv = appendElement(spriteDiv, "div", "text");
+              textDiv.innerText = sprite.id;
+            }
+
+            if (configSprite)
+              addDoubleClickHandler(spriteDiv, () => {
+                this.postMessage({
+                  type: "selectLine",
+                  lineNo: configSprite.lineNo,
+                  columnNo: this.config.getParameterColumn(configSprite),
+                });
               });
-            });
+          }
         }
       }
     }

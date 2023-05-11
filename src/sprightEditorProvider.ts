@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as util from "./util";
 import { SprightProvider } from "./sprightProvider";
 import { Spright } from "./spright";
+import { Description } from "./web/Description";
 
 async function openInTextEditor(filename: vscode.Uri, range?: vscode.Range) {
   const document = await vscode.workspace.openTextDocument(filename);
@@ -55,9 +56,9 @@ class SprightEditor {
 
     this.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
-        case "setDescriptionMode":
+        case "refreshDescription":
           this.describeOnlyInput = e.describeOnlyInput;
-          return;
+          return this.updateWebview();
 
         case "autocomplete":
           return this.updateConfig(
@@ -108,7 +109,7 @@ class SprightEditor {
     await this.updateWebview();
   }
 
-  private async getAutocompletedConfig(pattern?: string) {
+  private async getAutocompletedConfig(pattern?: string): Promise<string> {
     const result = await this.spright.autocompleteConfig(
       this.document.fileName,
       this.document.getText(),
@@ -118,7 +119,7 @@ class SprightEditor {
     return result.stdout;
   }
 
-  private async updateOutput() {
+  private async updateOutput(): Promise<string> {
     const result = await this.spright.updateOutput(
       this.document.fileName,
       this.document.getText()
@@ -127,13 +128,19 @@ class SprightEditor {
     return result.stdout;
   }
 
-  private async getDescription(config: string) {
+  private async getDescription(config: string): Promise<Description> {
     const result = await this.spright.getDescription(
       this.document.fileName,
       config,
       this.describeOnlyInput
     );
     this.parseErrorOutput(result.stderr);
+    if (result.stdout.length == 0)
+      return {
+        inputs: [],
+        sources: [],
+        sprites: [],
+      };
     return JSON.parse(result.stdout);
   }
 

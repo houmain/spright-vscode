@@ -58,13 +58,13 @@ export class Spright {
   async getDescription(
     configFilename: string,
     config: string,
-    describeInput: boolean
+    describeOnlyInput: boolean
   ) {
     return this.exec(
       dirname(configFilename),
       [
         "-m",
-        describeInput ? "describe-input" : "describe",
+        describeOnlyInput ? "describe-input" : "describe",
         "-i",
         "stdin",
         "-o",

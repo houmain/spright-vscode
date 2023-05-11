@@ -23,6 +23,7 @@ class SprightEditor {
   private diagnostics: vscode.Diagnostic[] = [];
   private updatingWebview = false;
   private updateWebviewOnceMore = false;
+  private describeOnlyInput = true;
 
   constructor(
     context: vscode.ExtensionContext,
@@ -54,9 +55,14 @@ class SprightEditor {
 
     this.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
+        case "setDescriptionMode":
+          this.describeOnlyInput = e.describeOnlyInput;
+          return;
+
         case "autocomplete":
           return this.updateConfig(
-            await this.getAutocompletedConfig(e.filename));
+            await this.getAutocompletedConfig(e.filename)
+          );
 
         case "update":
           return this.updateOutput();
@@ -121,11 +127,11 @@ class SprightEditor {
     return result.stdout;
   }
 
-  private async getDescription(config: string, describeInput: boolean) {
+  private async getDescription(config: string) {
     const result = await this.spright.getDescription(
       this.document.fileName,
       config,
-      describeInput
+      this.describeOnlyInput
     );
     this.parseErrorOutput(result.stderr);
     return JSON.parse(result.stdout);
@@ -133,7 +139,7 @@ class SprightEditor {
 
   private async updateWebview() {
     const config = util.toNewLineSeparators(this.document.getText());
-    const description = await this.getDescription(config, false);
+    const description = await this.getDescription(config);
 
     const getUri = (path: string, filename: string) => {
       const uri = this.webview.asWebviewUri(

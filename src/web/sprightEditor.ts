@@ -117,6 +117,13 @@ export class SprightEditor {
     this.rebuildView();
   }
 
+  private refreshDescription() {
+    this.postMessage({
+      type: "refreshDescription",
+      describeOnlyInput: !(this.showPivot || this.showTrimmedRect),
+    });
+  }
+
   private rebuildToolbar() {
     const itemsDiv = document.createElement("div");
     itemsDiv.className = "items";
@@ -160,8 +167,8 @@ export class SprightEditor {
     );
     this.showPivot = appendCheckbox(itemsDiv, "show-pivot", "pivot");
     addClickHandler(this.showId, () => this.rebuildView());
-    addClickHandler(this.showTrimmedRect, () => this.rebuildView());
-    addClickHandler(this.showPivot, () => this.rebuildView());
+    addClickHandler(this.showTrimmedRect, () => this.refreshDescription());
+    addClickHandler(this.showPivot, () => this.refreshDescription());
 
     this.toolbar.innerHTML = "";
     this.toolbar.appendChild(itemsDiv);

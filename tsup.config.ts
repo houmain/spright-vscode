@@ -5,7 +5,7 @@ export default defineConfig({
   clean: true,
   format: ["cjs"],
   sourcemap: true,
-  minify: true,
+  minify: false,
   bundle: true,
   outDir: "out",
   platform: "node",

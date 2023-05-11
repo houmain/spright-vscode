@@ -3,14 +3,14 @@ import * as util from "./util";
 import { SprightProvider } from "./sprightProvider";
 import { Spright } from "./spright";
 
-async function openInTextEditor(filename: vscode.Uri, range: vscode.Range) {
+async function openInTextEditor(filename: vscode.Uri, range?: vscode.Range) {
   const document = await vscode.workspace.openTextDocument(filename);
   return vscode.window.showTextDocument(document, {
     viewColumn:
       vscode.window.activeTextEditor?.document == document
         ? vscode.ViewColumn.Active
         : vscode.ViewColumn.Beside,
-    selection: new vscode.Selection(range.start, range.end),
+    selection: range ? new vscode.Selection(range.start, range.end) : undefined,
   });
 }
 
@@ -54,21 +54,21 @@ class SprightEditor {
 
     this.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
-        case "autocomplete": {
-          const config = await this.getAutocompletedConfig(e.filename);
-          this.updateConfig(config);
-          return;
-        }
-        case "update": {
-          await this.updateOutput();
-          return;
-        }
+        case "autocomplete":
+          return this.updateConfig(
+            await this.getAutocompletedConfig(e.filename));
+
+        case "update":
+          return this.updateOutput();
+
+        case "openDocument":
+          return openInTextEditor(this.document.uri);
+
         case "selectLine":
-          await openInTextEditor(
+          return openInTextEditor(
             this.document.uri,
             new vscode.Range(e.lineNo, e.columnNo || 0, e.lineNo, 1000000)
           );
-          return;
       }
     });
 

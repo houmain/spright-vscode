@@ -65,6 +65,11 @@ export class SprightEditor {
     this.config = new Config("");
     this.description = {} as Description;
     this.rebuildToolbar();
+
+    const html = this.content.parentElement!.parentElement!;
+    addDoubleClickHandler(html, () => {
+      this.postMessage({ type: "openDocument" });
+    });
   }
 
   updateZoomSelection() {

@@ -1,7 +1,7 @@
 import { Config } from "./Config";
 import { Description, Rect } from "./Description";
 
-const zoomLevels = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16];
+const zoomLevels = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 8, 10];
 
 function appendElement(parent: HTMLElement, type: string, className: string) {
   const div = document.createElement(type);
@@ -21,8 +21,10 @@ function appendRect(parent: HTMLElement, rect: Rect, className: string) {
 
 function appendCheckbox(parent: HTMLElement, className: string, text: string) {
   const input = appendElement(parent, "input", className) as HTMLInputElement;
+  input.id = "checkbox-" + className;
   input.type = "checkbox";
   const label = appendElement(parent, "label", className) as HTMLLabelElement;
+  label.htmlFor = input.id;
   label.textContent = text;
   return input;
 }
@@ -49,7 +51,7 @@ type State = {
 export class SprightEditor {
   private config: Config;
   private description: Description;
-  private zoomLevel = 2;
+  private zoomLevel = 1;
   private applyZoom?: () => void;
   private zoom!: HTMLSelectElement;
   private showId!: HTMLInputElement;
@@ -74,6 +76,11 @@ export class SprightEditor {
 
   updateZoomSelection() {
     this.zoom.selectedIndex = zoomLevels.indexOf(this.zoomLevel);
+  }
+
+  applyZoomSelection() {
+    this.zoomLevel = zoomLevels[this.zoom.selectedIndex];
+    if (this.applyZoom) this.applyZoom();
   }
 
   onZoom(direction: number) {
@@ -152,6 +159,7 @@ export class SprightEditor {
       option.value = level.toString();
       option.text = Math.round(level * 100) + "%";
     }
+    zoom.addEventListener("change", () => { this.applyZoomSelection(); });
     this.zoom = zoom;
     this.updateZoomSelection();
 

@@ -134,7 +134,7 @@ class SprightEditor {
         ).then((result: Result) => {
           this.parseErrorOutput(result.stderr);
           switch (result.code) {
-            case 0: progress.report({ increment: 100, message: "Succeeded" }); break;
+            case 0: progress.report({ increment: 100, message: "Completed" }); break;
             case 2: progress.report({ increment: 100, message: "Failed" }); break;
             case 1: progress.report({ increment: 100, message: "Completed with warnings" }); break;
           }

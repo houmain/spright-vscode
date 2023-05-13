@@ -245,11 +245,12 @@ export class SprightEditor {
               "sprite"
             );
 
-            if (this.showPivot.checked && sprite.pivot) {
-              const rect = sprite.sourceRect;
+            if (this.showPivot.checked && sprite.pivot && sprite.trimmedSourceRect && sprite.rect && sprite.trimmedRect) {
+              const rx = sprite.trimmedSourceRect.x + (sprite.rect.x - sprite.trimmedRect.x);
+              const ry = sprite.trimmedSourceRect.y + (sprite.rect.y - sprite.trimmedRect.y);
               const pivotDiv = appendElement(spritesDiv, "div", "pivot");
-              pivotDiv.style.setProperty("--x", rect.x + sprite.pivot.x + "px");
-              pivotDiv.style.setProperty("--y", rect.y + sprite.pivot.y + "px");
+              pivotDiv.style.setProperty("--x", rx + sprite.pivot.x + "px");
+              pivotDiv.style.setProperty("--y", ry + sprite.pivot.y + "px");
             }
             if (this.showId.checked) {
               const textDiv = appendElement(spriteDiv, "div", "text");

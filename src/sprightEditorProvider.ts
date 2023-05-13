@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as util from "./util";
 import { SprightProvider } from "./sprightProvider";
-import { Spright } from "./spright";
+import { Spright, Result } from "./spright";
 import { Description } from "./web/Description";
 
 async function openInTextEditor(filename: vscode.Uri, range?: vscode.Range) {
@@ -119,13 +119,31 @@ class SprightEditor {
     return result.stdout;
   }
 
-  private async updateOutput(): Promise<string> {
-    const result = await this.spright.updateOutput(
-      this.document.fileName,
-      this.document.getText()
-    );
-    this.parseErrorOutput(result.stderr);
-    return result.stdout;
+  private async updateOutput() {
+
+    return vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      title: "Updating spright output"
+    }, (progress, _token) => {
+      progress.report({ message: "In progress" });
+
+      return new Promise<void>(resolve => {
+        this.spright.updateOutput(
+          this.document.fileName,
+          this.document.getText()
+        ).then((result: Result) => {
+          this.parseErrorOutput(result.stderr);
+          switch (result.code) {
+            case 0: progress.report({ increment: 100, message: "Succeeded" }); break;
+            case 2: progress.report({ increment: 100, message: "Failed" }); break;
+            case 1: progress.report({ increment: 100, message: "Completed with warnings" }); break;
+          }
+          setTimeout(() => {
+            resolve();
+          }, 4000);
+        });
+      });
+    });
   }
 
   private async getDescription(config: string): Promise<Description> {

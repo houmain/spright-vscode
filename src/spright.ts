@@ -45,7 +45,7 @@ export class Spright {
     config: string,
     pattern?: string
   ) {
-    const args = ["-i", "stdin", "-o", "stdout", "-w", "-m", "complete"];
+    const args = ["-i", "stdin", "-o", "stdout", "-m", "complete"];
     if (pattern) args.push(pattern);
     return this.exec(dirname(configFilename), args, config);
   }
@@ -69,7 +69,6 @@ export class Spright {
         "stdin",
         "-o",
         "stdout",
-        "-w",
       ],
       config
     );

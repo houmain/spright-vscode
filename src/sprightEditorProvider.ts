@@ -120,30 +120,40 @@ class SprightEditor {
   }
 
   private async updateOutput() {
+    return vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: "Updating spright output",
+      },
+      (progress, _token) => {
+        progress.report({ message: "In progress" });
 
-    return vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification,
-      title: "Updating spright output"
-    }, (progress, _token) => {
-      progress.report({ message: "In progress" });
-
-      return new Promise<void>(resolve => {
-        this.spright.updateOutput(
-          this.document.fileName,
-          this.document.getText()
-        ).then((result: Result) => {
-          this.parseErrorOutput(result.stderr);
-          switch (result.code) {
-            case 0: progress.report({ increment: 100, message: "Completed" }); break;
-            case 2: progress.report({ increment: 100, message: "Failed" }); break;
-            case 1: progress.report({ increment: 100, message: "Completed with warnings" }); break;
-          }
-          setTimeout(() => {
-            resolve();
-          }, 4000);
+        return new Promise<void>((resolve) => {
+          this.spright
+            .updateOutput(this.document.fileName, this.document.getText())
+            .then((result: Result) => {
+              this.parseErrorOutput(result.stderr);
+              switch (result.code) {
+                case 0:
+                  progress.report({ increment: 100, message: "Completed" });
+                  break;
+                case 1:
+                  progress.report({ increment: 100, message: "Failed" });
+                  break;
+                case 2:
+                  progress.report({
+                    increment: 100,
+                    message: "Completed with warnings",
+                  });
+                  break;
+              }
+              setTimeout(() => {
+                resolve();
+              }, 4000);
+            });
         });
-      });
-    });
+      }
+    );
   }
 
   private async getDescription(config: string): Promise<Description> {
@@ -285,6 +295,7 @@ class SprightEditor {
 export class SprightEditorProvider implements vscode.CustomTextEditorProvider {
   constructor(
     private readonly context: vscode.ExtensionContext,
+    private readonly sprightProvider: SprightProvider,
     private readonly sprightVersion: string
   ) {}
 
@@ -294,8 +305,9 @@ export class SprightEditorProvider implements vscode.CustomTextEditorProvider {
     _token: vscode.CancellationToken
   ): Promise<void> {
     try {
-      const sprightProvider = new SprightProvider(this.context);
-      const spright = await sprightProvider.getSpright(this.sprightVersion);
+      const spright = await this.sprightProvider.getSpright(
+        this.sprightVersion
+      );
       return new SprightEditor(
         this.context,
         document,

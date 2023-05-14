@@ -3,6 +3,7 @@ import { SprightEditorProvider } from "./sprightEditorProvider";
 import { SprightDocumentSymbolProvider } from "./sprightDocumentSymbolProvider";
 import { SprightCompletionItemProvider } from "./sprightCompletionItemProvider";
 import { SprightDocumentDropEditProvider } from "./sprightDocumentDropEditProvider";
+import { SprightProvider } from "./sprightProvider";
 
 const sprightVersion = "3.0.0";
 
@@ -12,9 +13,18 @@ export function activate(context: vscode.ExtensionContext) {
     { scheme: "file", language: "spright" },
   ];
 
-  const sprightEditor = new SprightEditorProvider(context, sprightVersion);
+  const sprightProvider = new SprightProvider(context);
+
+  const sprightEditorProvider = new SprightEditorProvider(
+    context,
+    sprightProvider,
+    sprightVersion
+  );
   context.subscriptions.push(
-    vscode.window.registerCustomEditorProvider("spright.editor", sprightEditor)
+    vscode.window.registerCustomEditorProvider(
+      "spright.editor",
+      sprightEditorProvider
+    )
   );
 
   context.subscriptions.push(
@@ -27,10 +37,18 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.languages.registerCompletionItemProvider(
       "spright",
-      new SprightCompletionItemProvider(context, sprightVersion)
+      new SprightCompletionItemProvider(
+        context,
+        sprightProvider,
+        sprightVersion
+      )
     )
   );
 
-	context.subscriptions.push(vscode.languages.registerDocumentDropEditProvider(
-    selector, new SprightDocumentDropEditProvider()));
+  context.subscriptions.push(
+    vscode.languages.registerDocumentDropEditProvider(
+      selector,
+      new SprightDocumentDropEditProvider()
+    )
+  );
 }

@@ -51,7 +51,7 @@ type State = {
 export class SprightEditor {
   private config: Config;
   private description: Description;
-  private zoomLevel = 1;
+  private zoomLevel = 2;
   private applyZoom?: () => void;
   private zoom!: HTMLSelectElement;
   private showId!: HTMLInputElement;

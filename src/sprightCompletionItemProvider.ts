@@ -62,19 +62,17 @@ function parseDocumentation(text: string) {
 }
 
 export class SprightCompletionItemProvider {
-  private readonly context: vscode.ExtensionContext;
-  private readonly sprightVersion: string;
   private definitions?: { [k: string]: Definition };
 
-  constructor(context: vscode.ExtensionContext, sprightVersion: string) {
-    this.context = context;
-    this.sprightVersion = sprightVersion;
-  }
+  constructor(
+    private context: vscode.ExtensionContext,
+    private sprightProvider: SprightProvider,
+    private sprightVersion: string
+  ) {}
 
   private async loadDefinitions() {
     try {
-      const sprightProvider = new SprightProvider(this.context);
-      const readme = await sprightProvider.getReadme(this.sprightVersion);
+      const readme = await this.sprightProvider.getReadme(this.sprightVersion);
       return parseReadmeMarkdown(readme);
     } catch (ex) {
       console.log("Loading definitions failed: ", ex);

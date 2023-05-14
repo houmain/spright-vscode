@@ -63,6 +63,7 @@ function parseDocumentation(text: string) {
 
 export class SprightCompletionItemProvider {
   private definitions?: { [k: string]: Definition };
+  private definitionCompletions: vscode.CompletionItem[] = [];
 
   constructor(
     private context: vscode.ExtensionContext,
@@ -80,16 +81,46 @@ export class SprightCompletionItemProvider {
     }
   }
 
+  private createDefinitionCompeltions() {
+    const items: vscode.CompletionItem[] = [];
+    for (const name in this.definitions) {
+      const definition = this.definitions[name];
+      const c = new vscode.CompletionItem(name);
+      c.detail = "Arguments: " + definition.args;
+      c.documentation = parseDocumentation(definition.description);
+      c.kind = vscode.CompletionItemKind.Field;
+      const priority = priorize(name);
+      if (priority) {
+        c.sortText = priority.toString() + " " + name;
+        c.preselect = true;
+      }
+      if (definition.args.length > 0) {
+        c.insertText = name + " ";
+        if (definition.enumValues.length > 0) {
+          c.command = {
+            command: "editor.action.triggerSuggest",
+            title: "Complete arguments...",
+          };
+        }
+      } else {
+        c.insertText = name;
+      }
+      items.push(c);
+    }
+    return items;
+  }
+
   async provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
-    token: vscode.CancellationToken,
-    context: vscode.CompletionContext
+    _token: vscode.CancellationToken,
+    _context: vscode.CompletionContext
   ) {
     if (!this.definitions) {
       this.definitions = await this.loadDefinitions();
+      this.definitionCompletions = this.createDefinitionCompeltions();
     }
-    const items: vscode.CompletionItem[] = [];
+
     const linePrefix = document
       .lineAt(position)
       .text.substring(0, position.character)
@@ -97,31 +128,11 @@ export class SprightCompletionItemProvider {
       .split(/\s+/);
 
     if (linePrefix.length == 1) {
-      for (const name in this.definitions) {
-        const definition = this.definitions[name];
-        const c = new vscode.CompletionItem(name);
-        c.detail = "Arguments: " + definition.args;
-        c.documentation = parseDocumentation(definition.description);
-        c.kind = vscode.CompletionItemKind.Field;
-        const priority = priorize(name);
-        if (priority) {
-          c.sortText = priority.toString() + " " + name;
-          c.preselect = true;
-        }
-        if (definition.args.length > 0) {
-          c.insertText = name + " ";
-          if (definition.enumValues.length > 0) {
-            c.command = {
-              command: "editor.action.triggerSuggest",
-              title: "Complete arguments...",
-            };
-          }
-        } else {
-          c.insertText = name;
-        }
-        items.push(c);
-      }
+      // complete definitions
+      return this.definitionCompletions;
     } else {
+      // complete arguments
+      const items: vscode.CompletionItem[] = [];
       const definition = this.definitions[linePrefix[0]];
       if (definition) {
         for (const value of definition.enumValues) {
@@ -131,7 +142,7 @@ export class SprightCompletionItemProvider {
           items.push(c);
         }
       }
+      return items;
     }
-    return items;
   }
 }

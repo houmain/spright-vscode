@@ -159,7 +159,9 @@ export class SprightEditor {
       option.value = level.toString();
       option.text = Math.round(level * 100) + "%";
     }
-    zoom.addEventListener("change", () => { this.applyZoomSelection(); });
+    zoom.addEventListener("change", () => {
+      this.applyZoomSelection();
+    });
     this.zoom = zoom;
     this.updateZoomSelection();
 
@@ -193,6 +195,9 @@ export class SprightEditor {
     let inputIndex = 0;
     for (const input of this.description.inputs) {
       const configInput = this.config.inputs[inputIndex++];
+      if (configInput.sprites.length == 0 && input.sources.length == 0)
+        continue;
+
       const inputDiv = appendElement(inputsDiv, "div", "input");
 
       if (configInput)
@@ -245,9 +250,19 @@ export class SprightEditor {
               "sprite"
             );
 
-            if (this.showPivot.checked && sprite.pivot && sprite.trimmedSourceRect && sprite.rect && sprite.trimmedRect) {
-              const rx = sprite.trimmedSourceRect.x + (sprite.rect.x - sprite.trimmedRect.x);
-              const ry = sprite.trimmedSourceRect.y + (sprite.rect.y - sprite.trimmedRect.y);
+            if (
+              this.showPivot.checked &&
+              sprite.pivot &&
+              sprite.trimmedSourceRect &&
+              sprite.rect &&
+              sprite.trimmedRect
+            ) {
+              const rx =
+                sprite.trimmedSourceRect.x +
+                (sprite.rect.x - sprite.trimmedRect.x);
+              const ry =
+                sprite.trimmedSourceRect.y +
+                (sprite.rect.y - sprite.trimmedRect.y);
               const pivotDiv = appendElement(spritesDiv, "div", "pivot");
               pivotDiv.style.setProperty("--x", rx + sprite.pivot.x + "px");
               pivotDiv.style.setProperty("--y", ry + sprite.pivot.y + "px");

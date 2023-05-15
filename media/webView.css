@@ -115,7 +115,7 @@ body.vscode-dark {
 
 .trimmed-rect {
   position: absolute;
-  border: 1px solid blue;
+  border: 2px dashed blue;
   left: calc(var(--rect_x) * var(--zoom));
   top: calc(var(--rect_y) * var(--zoom));
   width: calc(var(--rect_w) * var(--zoom));

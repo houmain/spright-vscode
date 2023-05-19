@@ -3,6 +3,7 @@ import * as util from "./util";
 import { SprightProvider } from "./sprightProvider";
 import { Spright, Result } from "./spright";
 import { Description } from "./web/Description";
+import { Settings, SprightSettingsProvider } from "./sprightSettingsProvider";
 
 async function openInTextEditor(filename: vscode.Uri, range?: vscode.Range) {
   const document = await vscode.workspace.openTextDocument(filename);
@@ -16,10 +17,8 @@ async function openInTextEditor(filename: vscode.Uri, range?: vscode.Range) {
 }
 
 class SprightEditor {
-  private readonly context: vscode.ExtensionContext;
+  private spright?: Spright;
   private readonly webview: vscode.Webview;
-  private readonly document: vscode.TextDocument;
-  private readonly spright: Spright;
   private diagnosticsCollection?: vscode.DiagnosticCollection;
   private diagnostics: vscode.Diagnostic[] = [];
   private updatingWebview = false;
@@ -27,20 +26,16 @@ class SprightEditor {
   private describeOnlyInput = true;
 
   constructor(
-    context: vscode.ExtensionContext,
-    document: vscode.TextDocument,
-    webviewPanel: vscode.WebviewPanel,
-    spright: Spright
+    private context: vscode.ExtensionContext,
+    private document: vscode.TextDocument,
+    private sprightProvider: SprightProvider,
+    sprightSettingsProvider: SprightSettingsProvider,
+    webviewPanel: vscode.WebviewPanel
   ) {
-    this.context = context;
-    this.document = document;
     this.webview = webviewPanel.webview;
-    this.spright = spright;
-
     this.webview.options = {
       enableScripts: true,
     };
-    this.webview.html = this.getHtmlForWebview();
 
     const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(
       (e) => {
@@ -49,10 +44,6 @@ class SprightEditor {
         }
       }
     );
-
-    webviewPanel.onDidDispose(() => {
-      changeDocumentSubscription.dispose();
-    });
 
     this.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
@@ -87,6 +78,31 @@ class SprightEditor {
       if (editor?.document == document) this.showDiagnostics();
       else this.hideDiagnostics();
     });
+
+    const settingsChangedSubscription =
+      sprightSettingsProvider.onSettingsChanged(this.updateSettings.bind(this));
+
+    webviewPanel.onDidDispose(() => {
+      settingsChangedSubscription.dispose();
+      changeDocumentSubscription.dispose();
+    });
+  }
+
+  async updateSettings(settings: Settings) {
+    try {
+      this.spright = await this.sprightProvider.getSpright({
+        version: settings.sprightVersion,
+        path: settings.sprightPath,
+      });
+      this.webview.html = this.getHtmlForWebview();
+      return this.updateWebview();
+    } catch {
+      if (settings.sprightPath) {
+        this.webview.html = `Loading spright from '${settings.sprightPath}' failed.`;
+      } else {
+        this.webview.html = `Downloading spright ${settings.sprightVersion} for ${process.platform}/${process.arch} failed.`;
+      }
+    }
   }
 
   private updateWebviewDebounced() {
@@ -105,12 +121,8 @@ class SprightEditor {
     }, 450);
   }
 
-  public async initialize() {
-    await this.updateWebview();
-  }
-
   private async getAutocompletedConfig(pattern?: string): Promise<string> {
-    const result = await this.spright.autocompleteConfig(
+    const result = await this.spright!.autocompleteConfig(
       this.document.fileName,
       this.document.getText(),
       pattern
@@ -129,35 +141,36 @@ class SprightEditor {
         progress.report({ message: "In progress" });
 
         return new Promise<void>((resolve) => {
-          this.spright
-            .updateOutput(this.document.fileName, this.document.getText())
-            .then((result: Result) => {
-              this.parseErrorOutput(result.stderr);
-              switch (result.code) {
-                case 0:
-                  progress.report({ increment: 100, message: "Completed" });
-                  break;
-                case 1:
-                  progress.report({ increment: 100, message: "Failed" });
-                  break;
-                case 2:
-                  progress.report({
-                    increment: 100,
-                    message: "Completed with warnings",
-                  });
-                  break;
-              }
-              setTimeout(() => {
-                resolve();
-              }, 4000);
-            });
+          this.spright!.updateOutput(
+            this.document.fileName,
+            this.document.getText()
+          ).then((result: Result) => {
+            this.parseErrorOutput(result.stderr);
+            switch (result.code) {
+              case 0:
+                progress.report({ increment: 100, message: "Completed" });
+                break;
+              case 1:
+                progress.report({ increment: 100, message: "Failed" });
+                break;
+              case 2:
+                progress.report({
+                  increment: 100,
+                  message: "Completed with warnings",
+                });
+                break;
+            }
+            setTimeout(() => {
+              resolve();
+            }, 4000);
+          });
         });
       }
     );
   }
 
   private async getDescription(config: string): Promise<Description> {
-    const result = await this.spright.getDescription(
+    const result = await this.spright!.getDescription(
       this.document.fileName,
       config,
       this.describeOnlyInput
@@ -296,7 +309,7 @@ export class SprightEditorProvider implements vscode.CustomTextEditorProvider {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly sprightProvider: SprightProvider,
-    private readonly sprightVersion: string
+    private readonly sprightSettingsProvider: SprightSettingsProvider
   ) {}
 
   public async resolveCustomTextEditor(
@@ -304,18 +317,12 @@ export class SprightEditorProvider implements vscode.CustomTextEditorProvider {
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken
   ): Promise<void> {
-    try {
-      const spright = await this.sprightProvider.getSpright(
-        this.sprightVersion
-      );
-      return new SprightEditor(
-        this.context,
-        document,
-        webviewPanel,
-        spright
-      ).initialize();
-    } catch {
-      webviewPanel.webview.html = `Downloading spright ${this.sprightVersion} for ${process.platform}/${process.arch} failed.`;
-    }
+    new SprightEditor(
+      this.context,
+      document,
+      this.sprightProvider,
+      this.sprightSettingsProvider,
+      webviewPanel
+    );
   }
 }

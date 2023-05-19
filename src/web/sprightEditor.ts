@@ -195,7 +195,8 @@ export class SprightEditor {
     let inputIndex = 0;
     for (const input of this.description.inputs) {
       const configInput = this.config.inputs[inputIndex++];
-      if (configInput.sprites.length == 0 && input.sources.length == 0)
+
+      if (configInput?.sprites.length == 0 && input.sources.length == 0)
         continue;
 
       const inputDiv = appendElement(inputsDiv, "div", "input");

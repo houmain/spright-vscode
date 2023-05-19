@@ -3,9 +3,8 @@ import { SprightEditorProvider } from "./sprightEditorProvider";
 import { SprightDocumentSymbolProvider } from "./sprightDocumentSymbolProvider";
 import { SprightCompletionItemProvider } from "./sprightCompletionItemProvider";
 import { SprightDocumentDropEditProvider } from "./sprightDocumentDropEditProvider";
+import { SprightSettingsProvider } from "./sprightSettingsProvider";
 import { SprightProvider } from "./sprightProvider";
-
-const sprightVersion = "3.0.0";
 
 export function activate(context: vscode.ExtensionContext) {
   const selector = [
@@ -13,12 +12,14 @@ export function activate(context: vscode.ExtensionContext) {
     { scheme: "file", language: "spright" },
   ];
 
+  const sprightSettingsProvider = new SprightSettingsProvider();
+
   const sprightProvider = new SprightProvider(context);
 
   const sprightEditorProvider = new SprightEditorProvider(
     context,
     sprightProvider,
-    sprightVersion
+    sprightSettingsProvider
   );
   context.subscriptions.push(
     vscode.window.registerCustomEditorProvider(
@@ -40,7 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
       new SprightCompletionItemProvider(
         context,
         sprightProvider,
-        sprightVersion
+        sprightSettingsProvider
       )
     )
   );

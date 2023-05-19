@@ -57,6 +57,22 @@
           }
         ]
       }
+    ],
+    "configuration": [
+      {
+        "title": "Spright Editor Settings",
+        "properties": {
+          "spright.sprightVersion": {
+            "type": "string",
+            "default": "3.0.0",
+            "description": "Spright Version."
+          },
+          "spright.sprightPath": {
+            "type": "string",
+            "description": "Spright Path."
+          }
+        }
+      }
     ]
   },
   "scripts": {

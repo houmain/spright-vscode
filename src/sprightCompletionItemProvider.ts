@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { SprightProvider } from "./sprightProvider";
+import { Settings, SprightSettingsProvider } from "./sprightSettingsProvider";
 
 type EnumValue = {
   name: string;
@@ -63,22 +64,35 @@ function parseDocumentation(text: string) {
 
 export class SprightCompletionItemProvider {
   private definitions?: { [k: string]: Definition };
-  private definitionCompletions: vscode.CompletionItem[] = [];
+  private definitionCompletions?: vscode.CompletionItem[];
+  private settings?: Settings;
 
   constructor(
     private context: vscode.ExtensionContext,
     private sprightProvider: SprightProvider,
-    private sprightVersion: string
-  ) {}
+    sprightSettingsProvider: SprightSettingsProvider
+  ) {
+    sprightSettingsProvider.onSettingsChanged(this.updateSettings.bind(this));
+  }
 
-  private async loadDefinitions() {
+  private updateSettings(settings: Settings) {
+    this.settings = settings;
+    delete this.definitions;
+  }
+
+  private async lazyLoadDefinitions() {
+    if (this.definitions) return;
     try {
-      const readme = await this.sprightProvider.getReadme(this.sprightVersion);
-      return parseReadmeMarkdown(readme);
+      const readme = await this.sprightProvider.getReadme({
+        version: this.settings!.sprightVersion,
+        path: this.settings!.sprightPath,
+      });
+      this.definitions = parseReadmeMarkdown(readme);
     } catch (ex) {
       console.log("Loading definitions failed: ", ex);
-      return {};
+      this.definitions = {};
     }
+    this.definitionCompletions = this.createDefinitionCompeltions();
   }
 
   private createDefinitionCompeltions() {
@@ -116,10 +130,7 @@ export class SprightCompletionItemProvider {
     _token: vscode.CancellationToken,
     _context: vscode.CompletionContext
   ) {
-    if (!this.definitions) {
-      this.definitions = await this.loadDefinitions();
-      this.definitionCompletions = this.createDefinitionCompeltions();
-    }
+    await this.lazyLoadDefinitions();
 
     const linePrefix = document
       .lineAt(position)
@@ -129,11 +140,11 @@ export class SprightCompletionItemProvider {
 
     if (linePrefix.length == 1) {
       // complete definitions
-      return this.definitionCompletions;
+      return this.definitionCompletions!;
     } else {
       // complete arguments
       const items: vscode.CompletionItem[] = [];
-      const definition = this.definitions[linePrefix[0]];
+      const definition = this.definitions![linePrefix[0]];
       if (definition) {
         for (const value of definition.enumValues) {
           const c = new vscode.CompletionItem(value.name);

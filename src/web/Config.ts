@@ -75,10 +75,9 @@ export class Config {
     for (let i = 0; i < this.lines.length; ++i) {
       const line = this.lines[i];
       if (line.definition === "input") {
-        const sprites: Sprite[] = [];
         this.inputs.push({
           lineNo: i,
-          sprites,
+          sprites: [],
         });
       } else if (line.definition === "sprite") {
         if (this.inputs.length > 0)

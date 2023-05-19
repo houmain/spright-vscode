@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as http from "http";
 import * as https from "https";
 import * as extract from "extract-zip";
+import * as path from "path";
 
 export function getNonce() {
   let text = "";
@@ -61,9 +62,20 @@ export function makeDirectory(directory: string) {
 }
 
 export function readTextFile(filename: string) {
+  console.log(`Reading '${filename}'`);
   return new Promise<string>((resolve, reject) => {
     fs.readFile(filename, (err, buffer) => {
       if (err === null) return resolve(buffer.toString());
+      reject("file not found");
+    });
+  });
+}
+
+export function writeTextFile(filename: string, content: string) {
+  console.log(`Writing '${filename}'`);
+  return new Promise<void>((resolve, reject) => {
+    fs.writeFile(filename, content, {}, (err) => {
+      if (err === null) return resolve();
       reject("file not found");
     });
   });

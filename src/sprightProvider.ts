@@ -2,7 +2,10 @@ import * as vscode from "vscode";
 import { Spright } from "./spright";
 import * as util from "./util";
 
-const developmentSprightDirectory = ``;
+export type SprightLocator = {
+  version: string;
+  path?: string;
+};
 
 const platformSuffix = (() => {
   if (process.platform === "win32" && process.arch == "x64") return "win64";
@@ -35,18 +38,18 @@ export class SprightProvider {
       : this.context.globalStorageUri;
   }
 
-  private getSprightDirectoryUri(version: string) {
-    if (this.context.extensionMode != vscode.ExtensionMode.Production)
-      return vscode.Uri.file(developmentSprightDirectory);
-
+  private getSprightDirectoryUri(locator: SprightLocator) {
+    if (locator.path) {
+      return vscode.Uri.file(locator.path);
+    }
     return vscode.Uri.joinPath(
       this.getStorageUri(),
-      `spright-${version}-${platformSuffix}`
+      `spright-${locator.version}-${platformSuffix}`
     );
   }
 
-  private getSprightFilename(version: string, filename: string) {
-    return vscode.Uri.joinPath(this.getSprightDirectoryUri(version), filename)
+  private getSprightFilename(locator: SprightLocator, filename: string) {
+    return vscode.Uri.joinPath(this.getSprightDirectoryUri(locator), filename)
       .fsPath;
   }
 
@@ -60,18 +63,18 @@ export class SprightProvider {
     await util.extractZip(tempFilename, this.getStorageUri().fsPath);
   }
 
-  async getSpright(version: string): Promise<Spright> {
-    const binaryPath = this.getSprightFilename(version, sprightBinaryFilename);
+  async getSpright(locator: SprightLocator): Promise<Spright> {
+    const binaryPath = this.getSprightFilename(locator, sprightBinaryFilename);
     if (!(await util.fileExists(binaryPath))) {
-      await this.installSpright(version);
+      await this.installSpright(locator.version);
     }
     return new Spright(binaryPath);
   }
 
-  async getReadme(version: string): Promise<string> {
-    const readmePath = this.getSprightFilename(version, sprightReadmeFilename);
+  async getReadme(locator: SprightLocator): Promise<string> {
+    const readmePath = this.getSprightFilename(locator, sprightReadmeFilename);
     if (!(await util.fileExists(readmePath))) {
-      await this.installSpright(version);
+      await this.installSpright(locator.version);
     }
     return util.readTextFile(readmePath);
   }

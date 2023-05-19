@@ -1,4 +1,4 @@
-import * as util from "./util";
+import * as utils from "./utils";
 import * as vscode from "vscode";
 
 export type Settings = {
@@ -33,7 +33,7 @@ export class SettingsProvider {
   async replace(settings: Settings) {
     this.settings = settings;
     const json = JSON.stringify(this.settings, undefined, 2);
-    return util.writeTextFile(this.filename, json);
+    return utils.writeTextFile(this.filename, json);
   }
 
   onSettingsChanged(listener: (settings: Settings) => void) {

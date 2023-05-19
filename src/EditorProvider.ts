@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import * as util from "./util";
+import * as utils from "./utils";
 import { SprightProvider } from "./SprightProvider";
 import { Spright, Result } from "./Spright";
 import { Description } from "./web/Description";
@@ -187,7 +187,7 @@ class Editor {
   }
 
   private async updateWebview() {
-    const config = util.toNewLineSeparators(this.document.getText());
+    const config = utils.toNewLineSeparators(this.document.getText());
     const description = await this.getDescription(config);
 
     const getUri = (path: string, filename: string) => {
@@ -262,7 +262,7 @@ class Editor {
     const styleMainUri = getWebviewPath("media", "webView.css");
 
     // Use a nonce to whitelist which scripts can be run
-    const nonce = util.getNonce();
+    const nonce = utils.getNonce();
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -285,10 +285,10 @@ class Editor {
 
   private updateConfig(config: string) {
     const current = this.document.getText();
-    const lineSeparator = util.getLineSeparator(current);
+    const lineSeparator = utils.getLineSeparator(current);
     const currentLines = current.split(lineSeparator);
-    const configLines = util.splitLines(config);
-    const range = util.getDifferingRange(currentLines, configLines);
+    const configLines = utils.splitLines(config);
+    const range = utils.getDifferingRange(currentLines, configLines);
     if (!range) return;
     const edit = new vscode.WorkspaceEdit();
 

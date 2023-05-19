@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { Spright } from "./Spright";
-import * as util from "./util";
+import * as utils from "./utils";
 
 export type SprightLocator = {
   version: string;
@@ -54,18 +54,18 @@ export class SprightProvider {
   }
 
   private async installSpright(version: string) {
-    await util.makeDirectory(this.getStorageUri().fsPath);
+    await utils.makeDirectory(this.getStorageUri().fsPath);
     const tempFilename = vscode.Uri.joinPath(
       this.getStorageUri(),
       ".temp"
     ).fsPath;
-    await util.download(this.getDownloadURL(version), tempFilename);
-    await util.extractZip(tempFilename, this.getStorageUri().fsPath);
+    await utils.download(this.getDownloadURL(version), tempFilename);
+    await utils.extractZip(tempFilename, this.getStorageUri().fsPath);
   }
 
   async getSpright(locator: SprightLocator): Promise<Spright> {
     const binaryPath = this.getSprightFilename(locator, sprightBinaryFilename);
-    if (!(await util.fileExists(binaryPath))) {
+    if (!(await utils.fileExists(binaryPath))) {
       await this.installSpright(locator.version);
     }
     return new Spright(binaryPath);
@@ -73,9 +73,9 @@ export class SprightProvider {
 
   async getReadme(locator: SprightLocator): Promise<string> {
     const readmePath = this.getSprightFilename(locator, sprightReadmeFilename);
-    if (!(await util.fileExists(readmePath))) {
+    if (!(await utils.fileExists(readmePath))) {
       await this.installSpright(locator.version);
     }
-    return util.readTextFile(readmePath);
+    return utils.readTextFile(readmePath);
   }
 }

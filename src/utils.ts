@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as http from "http";
 import * as https from "https";
 import * as extract from "extract-zip";
-import * as path from "path";
+import { spawn } from "child_process";
 
 export function getNonce() {
   let text = "";
@@ -127,4 +127,38 @@ export function getDifferingRange(current: string[], source: string[]) {
       diff: source.splice(firstDiff, lastDiffSource - firstDiff),
     };
   }
+}
+
+export type ExecResult = {
+  code: number;
+  stdout: string;
+  stderr: string;
+};
+
+export async function exec(
+  binaryPath: string,
+  workingDirectory: string,
+  args: string[],
+  stdin?: string
+) {
+  return new Promise<ExecResult>((resolve, reject) => {
+    let stdout = "";
+    let stderr = "";
+    const child = spawn(binaryPath, args, {
+      cwd: workingDirectory,
+    });
+    child.stdin.end(stdin);
+    child.stdout.on("data", (chunk: string) => (stdout += chunk));
+    child.stderr.on("data", (chunk: string) => (stderr += chunk));
+    child.on("error", (err: any) => {
+      return reject(err);
+    });
+    child.on("close", (code: number) => {
+      return resolve({
+        code,
+        stdout,
+        stderr,
+      });
+    });
+  });
 }

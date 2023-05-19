@@ -1,11 +1,7 @@
 import * as vscode from "vscode";
+import { Settings, SettingsProvider } from "./SettingsProvider";
 import { Spright } from "./Spright";
 import * as utils from "./utils";
-
-export type SprightLocator = {
-  version: string;
-  path?: string;
-};
 
 const platformSuffix = (() => {
   if (process.platform === "win32" && process.arch == "x64") return "win64";
@@ -18,11 +14,10 @@ const sprightBinaryFilename =
 const sprightReadmeFilename = "README.md";
 
 export class SprightProvider {
-  private readonly context: vscode.ExtensionContext;
-
-  constructor(context: vscode.ExtensionContext) {
-    this.context = context;
-  }
+  constructor(
+    readonly context: vscode.ExtensionContext,
+    readonly settingsProvider: SettingsProvider
+  ) {}
 
   private getDownloadURL(version: string) {
     return vscode.Uri.from({
@@ -38,18 +33,18 @@ export class SprightProvider {
       : this.context.globalStorageUri;
   }
 
-  private getSprightDirectoryUri(locator: SprightLocator) {
-    if (locator.path) {
-      return vscode.Uri.file(locator.path);
+  private getSprightDirectoryUri(settings: Settings) {
+    if (settings.sprightPath) {
+      return vscode.Uri.file(settings.sprightPath);
     }
     return vscode.Uri.joinPath(
       this.getStorageUri(),
-      `spright-${locator.version}-${platformSuffix}`
+      `spright-${settings.sprightVersion}-${platformSuffix}`
     );
   }
 
-  private getSprightFilename(locator: SprightLocator, filename: string) {
-    return vscode.Uri.joinPath(this.getSprightDirectoryUri(locator), filename)
+  private getSprightFilename(settings: Settings, filename: string) {
+    return vscode.Uri.joinPath(this.getSprightDirectoryUri(settings), filename)
       .fsPath;
   }
 
@@ -63,18 +58,20 @@ export class SprightProvider {
     await utils.extractZip(tempFilename, this.getStorageUri().fsPath);
   }
 
-  async getSpright(locator: SprightLocator): Promise<Spright> {
-    const binaryPath = this.getSprightFilename(locator, sprightBinaryFilename);
+  async getSpright(): Promise<Spright> {
+    const settings = this.settingsProvider.get();
+    const binaryPath = this.getSprightFilename(settings, sprightBinaryFilename);
     if (!(await utils.fileExists(binaryPath))) {
-      await this.installSpright(locator.version);
+      await this.installSpright(settings.sprightVersion);
     }
     return new Spright(binaryPath);
   }
 
-  async getReadme(locator: SprightLocator): Promise<string> {
-    const readmePath = this.getSprightFilename(locator, sprightReadmeFilename);
+  async getReadme(): Promise<string> {
+    const settings = this.settingsProvider.get();
+    const readmePath = this.getSprightFilename(settings, sprightReadmeFilename);
     if (!(await utils.fileExists(readmePath))) {
-      await this.installSpright(locator.version);
+      await this.installSpright(settings.sprightVersion);
     }
     return utils.readTextFile(readmePath);
   }

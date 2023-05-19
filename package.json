@@ -58,18 +58,41 @@
         ]
       }
     ],
+    "commands": [
+      {
+        "command": "spright.execute",
+        "title": "Execute spright"
+      }
+    ],
     "configuration": [
       {
         "title": "Spright Editor Settings",
         "properties": {
           "spright.sprightVersion": {
+            "order": 1,
             "type": "string",
             "default": "3.0.0",
-            "description": "Spright Version."
+            "description": "Sets the Spright version the extension should use."
           },
           "spright.sprightPath": {
+            "order": 2,
             "type": "string",
-            "description": "Spright Path."
+            "description": "Directory containing a custom Spright installation to use."
+          },
+          "spright.output": {
+            "order": 3,
+            "type": "string",
+            "description": "Filename of the output description."
+          },
+          "spright.template": {
+            "order": 4,
+            "type": "string",
+            "description": "Filename of the output description template to use."
+          },
+          "spright.path": {
+            "order": 5,
+            "type": "string",
+            "description": "A path which should be prepended to all output files."
           }
         }
       }

@@ -18,6 +18,7 @@ async function openInTextEditor(filename: vscode.Uri, range?: vscode.Range) {
 
 class Editor {
   private spright?: Spright;
+  private settings: Settings;
   private readonly webview: vscode.Webview;
   private diagnosticsCollection?: vscode.DiagnosticCollection;
   private diagnostics: vscode.Diagnostic[] = [];
@@ -32,6 +33,7 @@ class Editor {
     settingsProvider: SettingsProvider,
     webviewPanel: vscode.WebviewPanel
   ) {
+    this.settings = settingsProvider.get();
     this.webview = webviewPanel.webview;
     this.webview.options = {
       enableScripts: true,
@@ -91,10 +93,8 @@ class Editor {
 
   async updateSettings(settings: Settings) {
     try {
-      this.spright = await this.sprightProvider.getSpright({
-        version: settings.sprightVersion,
-        path: settings.sprightPath,
-      });
+      this.settings = settings;
+      this.spright = await this.sprightProvider.getSpright();
       this.webview.html = this.getHtmlForWebview();
       return this.updateWebview();
     } catch {
@@ -144,7 +144,10 @@ class Editor {
         return new Promise<void>((resolve) => {
           this.spright!.updateOutput(
             this.document.fileName,
-            this.document.getText()
+            this.document.getText(),
+            this.settings.output,
+            this.settings.template,
+            this.settings.path
           ).then((result: utils.ExecResult) => {
             this.parseErrorOutput(result.stderr);
             switch (result.code) {
@@ -153,12 +156,14 @@ class Editor {
                 break;
               case 1:
                 progress.report({ increment: 100, message: "Failed" });
+                console.error(result.stderr);
                 break;
               case 2:
                 progress.report({
                   increment: 100,
                   message: "Completed with warnings",
                 });
+                console.warn(result.stderr);
                 break;
             }
             setTimeout(() => {

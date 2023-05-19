@@ -65,28 +65,22 @@ function parseDocumentation(text: string) {
 export class SprightCompletionItemProvider {
   private definitions?: { [k: string]: Definition };
   private definitionCompletions?: vscode.CompletionItem[];
-  private settings?: Settings;
 
   constructor(
-    private context: vscode.ExtensionContext,
     private sprightProvider: SprightProvider,
     settingsProvider: SettingsProvider
   ) {
-    settingsProvider.onSettingsChanged(this.updateSettings.bind(this));
+    settingsProvider.onSettingsChanged(this.resetDefinitions.bind(this));
   }
 
-  private updateSettings(settings: Settings) {
-    this.settings = settings;
+  private resetDefinitions() {
     delete this.definitions;
   }
 
   private async lazyLoadDefinitions() {
     if (this.definitions) return;
     try {
-      const readme = await this.sprightProvider.getReadme({
-        version: this.settings!.sprightVersion,
-        path: this.settings!.sprightPath,
-      });
+      const readme = await this.sprightProvider.getReadme();
       this.definitions = parseReadmeMarkdown(readme);
     } catch (ex) {
       console.log("Loading definitions failed: ", ex);

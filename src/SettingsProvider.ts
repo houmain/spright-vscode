@@ -1,39 +1,43 @@
-import * as utils from "./utils";
 import * as vscode from "vscode";
 
 export type Settings = {
   sprightVersion: string;
   sprightPath?: string;
+  output?: string;
   template?: string;
+  path?: string;
 };
+
+function emptyToUndefined(value?: string) {
+  if (value && value.length > 0) return value;
+  return undefined;
+}
 
 export class SettingsProvider {
   private settings: Settings = {
     sprightVersion: "",
   };
-  private filename = ".vscode/spright.json";
   private onChanged = new vscode.EventEmitter<Settings>();
 
   constructor() {
+    this.reload();
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("spright")) this.reload();
     });
-    this.reload();
   }
 
-  async reload() {
+  reload() {
     const config = vscode.workspace.getConfiguration("spright");
-    this.settings.sprightVersion = (await config.get("sprightVersion")) ?? "";
-    this.settings.sprightPath = await config.get("sprightPath");
-    if (this.settings.sprightPath && this.settings.sprightPath.length == 0)
-      delete this.settings.sprightPath;
+    this.settings.sprightVersion = config.get("sprightVersion") ?? "";
+    this.settings.sprightPath = emptyToUndefined(config.get("sprightPath"));
+    this.settings.output = emptyToUndefined(config.get("output"));
+    this.settings.template = emptyToUndefined(config.get("template"));
+    this.settings.path = emptyToUndefined(config.get("path"));
     this.onChanged.fire(this.settings);
   }
 
-  async replace(settings: Settings) {
-    this.settings = settings;
-    const json = JSON.stringify(this.settings, undefined, 2);
-    return utils.writeTextFile(this.filename, json);
+  get() {
+    return this.settings;
   }
 
   onSettingsChanged(listener: (settings: Settings) => void) {

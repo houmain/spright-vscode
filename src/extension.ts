@@ -5,6 +5,7 @@ import { SprightCompletionItemProvider } from "./CompletionItemProvider";
 import { DocumentDropEditProvider } from "./DocumentDropEditProvider";
 import { SettingsProvider } from "./SettingsProvider";
 import { SprightProvider } from "./SprightProvider";
+import { Parameters } from "./Spright";
 
 export function activate(context: vscode.ExtensionContext) {
   const selector = [
@@ -14,7 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   const settingsProvider = new SettingsProvider();
 
-  const sprightProvider = new SprightProvider(context);
+  const sprightProvider = new SprightProvider(context, settingsProvider);
 
   const sprightEditorProvider = new EditorProvider(
     context,
@@ -38,11 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.languages.registerCompletionItemProvider(
       "spright",
-      new SprightCompletionItemProvider(
-        context,
-        sprightProvider,
-        settingsProvider
-      )
+      new SprightCompletionItemProvider(sprightProvider, settingsProvider)
     )
   );
 
@@ -50,6 +47,16 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerDocumentDropEditProvider(
       selector,
       new DocumentDropEditProvider()
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "spright.execute",
+      async (params?: Parameters) => {
+        const spright = await sprightProvider.getSpright();
+        return spright.execute(params ?? {});
+      }
     )
   );
 }

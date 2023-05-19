@@ -71,16 +71,6 @@ export function readTextFile(filename: string) {
   });
 }
 
-export function writeTextFile(filename: string, content: string) {
-  console.log(`Writing '${filename}'`);
-  return new Promise<void>((resolve, reject) => {
-    fs.writeFile(filename, content, {}, (err) => {
-      if (err === null) return resolve();
-      reject("file not found");
-    });
-  });
-}
-
 export function extractZip(filename: string, directory: string) {
   console.log(`Extracting '${filename}' to '${directory}'`);
   return extract.default(filename, { dir: directory });

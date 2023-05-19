@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as utils from "./utils";
 import { SprightProvider } from "./SprightProvider";
-import { Spright, Result } from "./Spright";
+import { Spright } from "./Spright";
 import { Description } from "./web/Description";
 import { Settings, SettingsProvider } from "./SettingsProvider";
 
@@ -145,7 +145,7 @@ class Editor {
           this.spright!.updateOutput(
             this.document.fileName,
             this.document.getText()
-          ).then((result: Result) => {
+          ).then((result: utils.ExecResult) => {
             this.parseErrorOutput(result.stderr);
             switch (result.code) {
               case 0:

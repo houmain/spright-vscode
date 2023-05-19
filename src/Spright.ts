@@ -1,10 +1,16 @@
-import { spawn } from "child_process";
 import { dirname } from "path";
+import * as utils from "./utils";
 
-export type Result = {
-  code: number;
-  stdout: string;
-  stderr: string;
+export type Parameters = {
+  workingDirectory?: string;
+  input?: string;
+  output?: string;
+  stdin?: string;
+  mode?: string;
+  modeArg?: string;
+  path?: string;
+  template?: string;
+  verbose?: boolean;
 };
 
 export class Spright {
@@ -14,30 +20,33 @@ export class Spright {
     this.binaryPath = binaryPath;
   }
 
-  private async exec(workingDirectory: string, args: string[], input: string) {
+  async execute(params: Parameters): Promise<utils.ExecResult> {
+    const args: string[] = [];
+    if (params.input) args.push("-i", params.input);
+    if (params.output) args.push("-o", params.output);
+    if (params.path) args.push("-p", params.path);
+    if (params.template) args.push("-t", params.template);
+    if (params.verbose) args.push("-v");
+    if (params.mode) {
+      args.push("-m", params.mode);
+      if (params.modeArg) args.push(params.modeArg);
+    }
+    const workingDirectory = params.workingDirectory
+      ? params.workingDirectory
+      : params.input
+      ? dirname(params.input)
+      : ".";
+
     const begin = Date.now();
-    return new Promise<Result>((resolve, reject) => {
-      let stdout = "";
-      let stderr = "";
-      const child = spawn(this.binaryPath, args, {
-        cwd: workingDirectory,
-      });
-      child.stdin.end(input);
-      child.stdout.on("data", (chunk: string) => (stdout += chunk));
-      child.stderr.on("data", (chunk: string) => (stderr += chunk));
-      child.on("error", (err: any) => {
-        return reject(err);
-      });
-      child.on("close", (code: number) => {
-        const duration = (Date.now() - begin) / 1000.0;
-        console.log("Executing spright", args, "took", duration, "seconds");
-        return resolve({
-          code,
-          stdout,
-          stderr,
-        });
-      });
-    });
+    const result = await utils.exec(
+      this.binaryPath,
+      workingDirectory,
+      args,
+      params.stdin
+    );
+    const duration = (Date.now() - begin) / 1000.0;
+    console.log("Executing spright", args, "took", duration, "seconds");
+    return result;
   }
 
   async autocompleteConfig(
@@ -45,14 +54,14 @@ export class Spright {
     config: string,
     pattern?: string
   ) {
-    const args = ["-i", "stdin", "-o", "stdout", "-m", "complete"];
-    if (pattern) args.push(pattern);
-    return this.exec(dirname(configFilename), args, config);
-  }
-
-  async updateOutput(configFilename: string, config: string) {
-    const args = ["-i", "stdin"];
-    return this.exec(dirname(configFilename), args, config);
+    return this.execute({
+      workingDirectory: dirname(configFilename),
+      input: "stdin",
+      output: "stdout",
+      mode: "complete",
+      modeArg: pattern,
+      stdin: config,
+    });
   }
 
   async getDescription(
@@ -60,17 +69,20 @@ export class Spright {
     config: string,
     describeOnlyInput: boolean
   ) {
-    return this.exec(
-      dirname(configFilename),
-      [
-        "-m",
-        describeOnlyInput ? "describe-input" : "describe",
-        "-i",
-        "stdin",
-        "-o",
-        "stdout",
-      ],
-      config
-    );
+    return this.execute({
+      workingDirectory: dirname(configFilename),
+      mode: describeOnlyInput ? "describe-input" : "describe",
+      input: "stdin",
+      output: "stdout",
+      stdin: config,
+    });
+  }
+
+  async updateOutput(configFilename: string, config: string) {
+    return this.execute({
+      workingDirectory: dirname(configFilename),
+      input: "stdin",
+      stdin: config,
+    });
   }
 }

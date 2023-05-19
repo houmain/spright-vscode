@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
-import { SprightEditorProvider } from "./sprightEditorProvider";
-import { SprightDocumentSymbolProvider } from "./sprightDocumentSymbolProvider";
-import { SprightCompletionItemProvider } from "./sprightCompletionItemProvider";
-import { SprightDocumentDropEditProvider } from "./sprightDocumentDropEditProvider";
-import { SprightSettingsProvider } from "./sprightSettingsProvider";
-import { SprightProvider } from "./sprightProvider";
+import { EditorProvider } from "./EditorProvider";
+import { DocumentSymbolProvider } from "./DocumentSymbolProvider";
+import { SprightCompletionItemProvider } from "./CompletionItemProvider";
+import { DocumentDropEditProvider } from "./DocumentDropEditProvider";
+import { SettingsProvider } from "./SettingsProvider";
+import { SprightProvider } from "./SprightProvider";
 
 export function activate(context: vscode.ExtensionContext) {
   const selector = [
@@ -12,14 +12,14 @@ export function activate(context: vscode.ExtensionContext) {
     { scheme: "file", language: "spright" },
   ];
 
-  const sprightSettingsProvider = new SprightSettingsProvider();
+  const settingsProvider = new SettingsProvider();
 
   const sprightProvider = new SprightProvider(context);
 
-  const sprightEditorProvider = new SprightEditorProvider(
+  const sprightEditorProvider = new EditorProvider(
     context,
     sprightProvider,
-    sprightSettingsProvider
+    settingsProvider
   );
   context.subscriptions.push(
     vscode.window.registerCustomEditorProvider(
@@ -31,7 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.languages.registerDocumentSymbolProvider(
       selector,
-      new SprightDocumentSymbolProvider()
+      new DocumentSymbolProvider()
     )
   );
 
@@ -41,7 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
       new SprightCompletionItemProvider(
         context,
         sprightProvider,
-        sprightSettingsProvider
+        settingsProvider
       )
     )
   );
@@ -49,7 +49,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.languages.registerDocumentDropEditProvider(
       selector,
-      new SprightDocumentDropEditProvider()
+      new DocumentDropEditProvider()
     )
   );
 }

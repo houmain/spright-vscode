@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Spright } from "./spright";
+import { Spright } from "./Spright";
 import * as util from "./util";
 
 export type SprightLocator = {

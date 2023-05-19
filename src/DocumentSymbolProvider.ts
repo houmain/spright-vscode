@@ -24,7 +24,7 @@ function getSymbolKind(definition: string): vscode.SymbolKind | undefined {
   }
 }
 
-export class SprightDocumentSymbolProvider
+export class DocumentSymbolProvider
   implements vscode.DocumentSymbolProvider
 {
   public provideDocumentSymbols(

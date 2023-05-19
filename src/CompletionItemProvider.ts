@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import { SprightProvider } from "./sprightProvider";
-import { Settings, SprightSettingsProvider } from "./sprightSettingsProvider";
+import { SprightProvider } from "./SprightProvider";
+import { Settings, SettingsProvider } from "./SettingsProvider";
 
 type EnumValue = {
   name: string;
@@ -70,9 +70,9 @@ export class SprightCompletionItemProvider {
   constructor(
     private context: vscode.ExtensionContext,
     private sprightProvider: SprightProvider,
-    sprightSettingsProvider: SprightSettingsProvider
+    settingsProvider: SettingsProvider
   ) {
-    sprightSettingsProvider.onSettingsChanged(this.updateSettings.bind(this));
+    settingsProvider.onSettingsChanged(this.updateSettings.bind(this));
   }
 
   private updateSettings(settings: Settings) {

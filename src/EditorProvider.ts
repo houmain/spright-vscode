@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 import * as util from "./util";
-import { SprightProvider } from "./sprightProvider";
-import { Spright, Result } from "./spright";
+import { SprightProvider } from "./SprightProvider";
+import { Spright, Result } from "./Spright";
 import { Description } from "./web/Description";
-import { Settings, SprightSettingsProvider } from "./sprightSettingsProvider";
+import { Settings, SettingsProvider } from "./SettingsProvider";
 
 async function openInTextEditor(filename: vscode.Uri, range?: vscode.Range) {
   const document = await vscode.workspace.openTextDocument(filename);
@@ -16,7 +16,7 @@ async function openInTextEditor(filename: vscode.Uri, range?: vscode.Range) {
   });
 }
 
-class SprightEditor {
+class Editor {
   private spright?: Spright;
   private readonly webview: vscode.Webview;
   private diagnosticsCollection?: vscode.DiagnosticCollection;
@@ -29,7 +29,7 @@ class SprightEditor {
     private context: vscode.ExtensionContext,
     private document: vscode.TextDocument,
     private sprightProvider: SprightProvider,
-    sprightSettingsProvider: SprightSettingsProvider,
+    settingsProvider: SettingsProvider,
     webviewPanel: vscode.WebviewPanel
   ) {
     this.webview = webviewPanel.webview;
@@ -79,8 +79,9 @@ class SprightEditor {
       else this.hideDiagnostics();
     });
 
-    const settingsChangedSubscription =
-      sprightSettingsProvider.onSettingsChanged(this.updateSettings.bind(this));
+    const settingsChangedSubscription = settingsProvider.onSettingsChanged(
+      this.updateSettings.bind(this)
+    );
 
     webviewPanel.onDidDispose(() => {
       settingsChangedSubscription.dispose();
@@ -305,11 +306,11 @@ class SprightEditor {
   }
 }
 
-export class SprightEditorProvider implements vscode.CustomTextEditorProvider {
+export class EditorProvider implements vscode.CustomTextEditorProvider {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly sprightProvider: SprightProvider,
-    private readonly sprightSettingsProvider: SprightSettingsProvider
+    private readonly settingsProvider: SettingsProvider
   ) {}
 
   public async resolveCustomTextEditor(
@@ -317,11 +318,11 @@ export class SprightEditorProvider implements vscode.CustomTextEditorProvider {
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken
   ): Promise<void> {
-    new SprightEditor(
+    new Editor(
       this.context,
       document,
       this.sprightProvider,
-      this.sprightSettingsProvider,
+      this.settingsProvider,
       webviewPanel
     );
   }

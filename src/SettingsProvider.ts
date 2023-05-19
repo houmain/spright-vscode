@@ -7,7 +7,7 @@ export type Settings = {
   template?: string;
 };
 
-export class SprightSettingsProvider {
+export class SettingsProvider {
   private settings: Settings = {
     sprightVersion: "",
   };

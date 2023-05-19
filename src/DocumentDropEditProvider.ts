@@ -3,7 +3,7 @@ import { dirname, relative } from "path";
 
 const uriListMime = "text/uri-list";
 
-export class SprightDocumentDropEditProvider
+export class DocumentDropEditProvider
   implements vscode.DocumentDropEditProvider
 {
   async provideDocumentDropEdits(

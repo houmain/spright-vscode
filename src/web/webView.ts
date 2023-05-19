@@ -1,4 +1,4 @@
-import { SprightEditor } from "./sprightEditor";
+import { Editor } from "./Editor";
 
 declare const acquireVsCodeApi: any;
 
@@ -6,7 +6,7 @@ declare const acquireVsCodeApi: any;
   const vscode = acquireVsCodeApi();
   const toolbar = document.querySelector("#toolbar") as HTMLElement;
   const content = document.querySelector("#content") as HTMLElement;
-  const sprightEditor = new SprightEditor(
+  const sprightEditor = new Editor(
     toolbar,
     content,
     (state: any) => vscode.setState(state),

@@ -48,7 +48,7 @@ type State = {
   description: Description;
 };
 
-export class SprightEditor {
+export class Editor {
   private config: Config;
   private description: Description;
   private zoomLevel = 2;

@@ -2,7 +2,7 @@
   "name": "spright-vscode",
   "displayName": "Spright Configuration Editor",
   "description": "Editor for spright configurations",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "publisher": "houmain",
   "license": "GPL",
   "homepage": "https://github.com/houmain/spright-vscode",
@@ -71,28 +71,28 @@
           "spright.sprightVersion": {
             "order": 1,
             "type": "string",
-            "default": "3.0.0",
+            "default": "3.1.0",
             "description": "Sets the Spright version the extension should use."
           },
-          "spright.sprightPath": {
-            "order": 2,
-            "type": "string",
-            "description": "Directory containing a custom Spright installation to use."
-          },
           "spright.output": {
-            "order": 3,
+            "order": 2,
             "type": "string",
             "description": "Filename of the output description."
           },
           "spright.template": {
-            "order": 4,
+            "order": 3,
             "type": "string",
             "description": "Filename of the output description template to use."
           },
           "spright.path": {
-            "order": 5,
+            "order": 4,
             "type": "string",
             "description": "A path which should be prepended to all output files."
+          },
+          "spright.sprightPath": {
+            "order": 5,
+            "type": "string",
+            "description": "Directory containing a custom Spright installation to use."
           }
         }
       }

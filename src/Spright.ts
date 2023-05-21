@@ -8,7 +8,7 @@ export type Parameters = {
   stdin?: string;
   mode?: string;
   modeArg?: string;
-  outputPath?: string;
+  path?: string;
   template?: string;
   verbose?: boolean;
 };
@@ -24,7 +24,7 @@ export class Spright {
     const args: string[] = [];
     if (params.input) args.push("-i", params.input);
     if (params.output) args.push("-o", params.output);
-    if (params.outputPath) args.push("-p", params.outputPath);
+    if (params.path) args.push("-p", params.path);
     if (params.template) args.push("-t", params.template);
     if (params.verbose) args.push("-v");
     if (params.mode) {
@@ -83,7 +83,7 @@ export class Spright {
     config: string,
     output?: string,
     template?: string,
-    outputPath?: string
+    path?: string
   ) {
     return this.execute({
       workingDirectory: dirname(configFilename),
@@ -91,7 +91,7 @@ export class Spright {
       output: output,
       stdin: config,
       template,
-      outputPath,
+      path,
     });
   }
 }

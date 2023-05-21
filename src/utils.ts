@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import * as fs from "fs";
 import * as http from "http";
 import * as https from "https";
@@ -151,4 +152,30 @@ export async function exec(
       });
     });
   });
+}
+
+export async function openInTextEditor(
+  filename: vscode.Uri,
+  range?: vscode.Range
+) {
+  const selection = range
+    ? new vscode.Selection(range.start, range.end)
+    : undefined;
+
+  // try to focus existing editor
+  for (const editor of vscode.window.visibleTextEditors)
+    if (editor.document.uri == filename) {
+      await vscode.window.showTextDocument(editor.document, editor.viewColumn);
+      if (range)
+        editor.revealRange(
+          range,
+          vscode.TextEditorRevealType.InCenterIfOutsideViewport
+        );
+      if (selection) editor.selection = selection;
+      return editor;
+    }
+
+  // open new editor
+  const document = await vscode.workspace.openTextDocument(filename);
+  return vscode.window.showTextDocument(document, { selection: selection });
 }

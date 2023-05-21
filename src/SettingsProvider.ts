@@ -17,7 +17,7 @@ export class SettingsProvider {
   private settings: Settings = {
     sprightVersion: "",
   };
-  private onChanged = new vscode.EventEmitter<Settings>();
+  private onChangedEmitter = new vscode.EventEmitter<Settings>();
 
   constructor() {
     this.reload();
@@ -33,7 +33,7 @@ export class SettingsProvider {
     this.settings.output = emptyToUndefined(config.get("output"));
     this.settings.template = emptyToUndefined(config.get("template"));
     this.settings.path = emptyToUndefined(config.get("path"));
-    this.onChanged.fire(this.settings);
+    this.onChangedEmitter.fire(this.settings);
   }
 
   get() {
@@ -42,6 +42,6 @@ export class SettingsProvider {
 
   onSettingsChanged(listener: (settings: Settings) => void) {
     listener(this.settings);
-    return this.onChanged.event(listener);
+    return this.onChangedEmitter.event(listener);
   }
 }

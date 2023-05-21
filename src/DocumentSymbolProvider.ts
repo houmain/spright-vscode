@@ -7,26 +7,24 @@ type Scope = {
 
 function getSymbolKind(definition: string): vscode.SymbolKind | undefined {
   switch (definition) {
+    case "path":
+      return vscode.SymbolKind.Function;
     case "glob":
       return vscode.SymbolKind.Function;
     case "input":
-      return vscode.SymbolKind.Function;
+      return vscode.SymbolKind.Field;
     case "output":
       return vscode.SymbolKind.Function;
     case "sheet":
       return vscode.SymbolKind.Variable;
-    case "sprite":
-      return vscode.SymbolKind.Field;
-    case "tag":
+    case "description":
       return vscode.SymbolKind.Function;
     case "group":
       return vscode.SymbolKind.Package;
   }
 }
 
-export class DocumentSymbolProvider
-  implements vscode.DocumentSymbolProvider
-{
+export class DocumentSymbolProvider implements vscode.DocumentSymbolProvider {
   public provideDocumentSymbols(
     document: vscode.TextDocument,
     token: vscode.CancellationToken

@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { SprightProvider } from "./SprightProvider";
-import { Settings, SettingsProvider } from "./SettingsProvider";
+import { SettingsProvider } from "./SettingsProvider";
 
 type EnumValue = {
   name: string;

@@ -127,7 +127,9 @@ export class Editor {
   private refreshDescription() {
     this.postMessage({
       type: "refreshDescription",
-      describeOnlyInput: !(this.showPivot || this.showTrimmedRect),
+      describeOnlyInput: !(
+        this.showPivot.checked || this.showTrimmedRect.checked
+      ),
     });
   }
 

@@ -1,11 +1,12 @@
 import * as vscode from "vscode";
-import { EditorProvider } from "./EditorProvider";
 import { DocumentSymbolProvider } from "./DocumentSymbolProvider";
 import { SprightCompletionItemProvider } from "./CompletionItemProvider";
 import { DocumentDropEditProvider } from "./DocumentDropEditProvider";
 import { SettingsProvider } from "./SettingsProvider";
 import { SprightProvider } from "./SprightProvider";
 import { Parameters } from "./Spright";
+import { EditorPanel } from "./EditorPanel";
+import { ActiveDocument } from "./ActiveDocument";
 
 export function activate(context: vscode.ExtensionContext) {
   const selector = [
@@ -14,20 +15,8 @@ export function activate(context: vscode.ExtensionContext) {
   ];
 
   const settingsProvider = new SettingsProvider();
-
   const sprightProvider = new SprightProvider(context, settingsProvider);
-
-  const sprightEditorProvider = new EditorProvider(
-    context,
-    sprightProvider,
-    settingsProvider
-  );
-  context.subscriptions.push(
-    vscode.window.registerCustomEditorProvider(
-      "spright.editor",
-      sprightEditorProvider
-    )
-  );
+  const activeDocument = new ActiveDocument(sprightProvider, settingsProvider);
 
   context.subscriptions.push(
     vscode.languages.registerDocumentSymbolProvider(
@@ -51,12 +40,20 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "spright.execute",
-      async (params?: Parameters) => {
-        const spright = await sprightProvider.getSpright();
-        return spright.execute(params ?? {});
-      }
-    )
+    vscode.commands.registerCommand("spright.update", () => {
+      return activeDocument.updateOutput();
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("spright.complete", () => {
+      return activeDocument.autocompleteConfig();
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("spright.editor", () => {
+      return EditorPanel.createOrShow(context, activeDocument);
+    })
   );
 }

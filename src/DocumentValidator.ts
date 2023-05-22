@@ -61,19 +61,24 @@ export class DocumentValidator {
   config = "";
   description = emptyDescription;
   diagnostics: vscode.Diagnostic[] = [];
+  describeOnlyInput = false;
 
   constructor(public document: vscode.TextDocument) {}
 
   async getDescription(spright: Spright, describeOnlyInput: boolean) {
-    this.config = utils.toNewLineSeparators(this.document.getText());
-    const result = await spright.getDescription(
-      this.document.fileName,
-      this.config,
-      describeOnlyInput
-    );
-    this.diagnostics = parseErrorOutput(this.document, result.stderr);
-    if (result.stdout.length > 0) {
-      this.description = JSON.parse(result.stdout);
+    const config = utils.toNewLineSeparators(this.document.getText());
+    if (this.config != config || this.describeOnlyInput != describeOnlyInput) {
+      this.config = config;
+      this.describeOnlyInput = describeOnlyInput;
+      const result = await spright.getDescription(
+        this.document.fileName,
+        this.config,
+        describeOnlyInput
+      );
+      this.diagnostics = parseErrorOutput(this.document, result.stderr);
+      if (result.stdout.length > 0) {
+        this.description = JSON.parse(result.stdout);
+      }
     }
   }
 

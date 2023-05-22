@@ -34,9 +34,6 @@
     "languages": [
       {
         "id": "spright",
-        "extensions": [
-          ".conf"
-        ],
         "filenames": [
           "spright.conf"
         ],

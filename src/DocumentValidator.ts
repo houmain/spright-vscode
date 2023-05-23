@@ -90,8 +90,7 @@ export class DocumentValidator {
     );
     this.diagnostics = parseErrorOutput(this.document, result.stderr);
     if (result.stdout.length > 0) {
-      this.config = result.stdout;
-      return updateDocument(this.document, this.config);
+      return updateDocument(this.document, result.stdout);
     }
   }
 

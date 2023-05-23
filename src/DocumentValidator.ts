@@ -95,6 +95,7 @@ export class DocumentValidator {
       {
         location: vscode.ProgressLocation.Notification,
         title: "Updating spright output",
+        cancellable: true,
       },
       (progress, _token) => {
         progress.report({ message: "In progress" });
@@ -113,22 +114,22 @@ export class DocumentValidator {
               switch (result.code) {
                 case 0:
                   progress.report({ increment: 100, message: "Completed" });
+                  setTimeout(resolve, 1000);
                   break;
                 case 1:
-                  progress.report({ increment: 100, message: "Failed" });
-                  console.error(result.stderr);
+                  progress.report({
+                    increment: 100,
+                    message: result.stderr,
+                  });
                   break;
                 case 2:
                   progress.report({
                     increment: 100,
                     message: "Completed with warnings",
                   });
-                  console.warn(result.stderr);
+                  setTimeout(resolve, 4000);
                   break;
               }
-              setTimeout(() => {
-                resolve();
-              }, 4000);
             });
         });
       }

@@ -44,9 +44,20 @@ export class SprightProvider {
     );
   }
 
-  private getSprightFilename(settings: Settings, filename: string) {
-    return vscode.Uri.joinPath(this.getSprightDirectoryUri(settings), filename)
-      .fsPath;
+  private async resolveSprightFilename(settings: Settings, filename: string) {
+    const resolved = vscode.Uri.joinPath(
+      this.getSprightDirectoryUri(settings),
+      filename
+    ).fsPath;
+    if (!(await utils.fileExists(resolved))) {
+      if (!settings.path) {
+        await this.installSpright(settings.sprightVersion);
+      }
+      if (!(await utils.fileExists(resolved))) {
+        throw "file not found";
+      }
+    }
+    return resolved;
   }
 
   private async installSpright(version: string) {
@@ -61,19 +72,19 @@ export class SprightProvider {
 
   async getSpright(): Promise<Spright> {
     const settings = this.settingsProvider.get();
-    const binaryPath = this.getSprightFilename(settings, sprightBinaryFilename);
-    if (!(await utils.fileExists(binaryPath))) {
-      await this.installSpright(settings.sprightVersion);
-    }
+    const binaryPath = await this.resolveSprightFilename(
+      settings,
+      sprightBinaryFilename
+    );
     return new Spright(binaryPath);
   }
 
   async getReadme(): Promise<string> {
     const settings = this.settingsProvider.get();
-    const readmePath = this.getSprightFilename(settings, sprightReadmeFilename);
-    if (!(await utils.fileExists(readmePath))) {
-      await this.installSpright(settings.sprightVersion);
-    }
+    const readmePath = await this.resolveSprightFilename(
+      settings,
+      sprightReadmeFilename
+    );
     return utils.readTextFile(readmePath);
   }
 }

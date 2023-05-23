@@ -153,15 +153,23 @@ export class SprightCompletionItemProvider {
         undefined,
         maxSuggestedInputFilenames
       );
+
       const items: vscode.CompletionItem[] = [];
-      for (const file of files) {
-        let string = `"${posix.normalize(relative(directory, file.fsPath))}"`;
+      const add = function (string: string) {
+        string = `"${string}"`;
         const c = new vscode.CompletionItem(string);
         if (beginQuote) string = string.substring(1);
         if (endQuote) string = string.substring(0, string.length - 1);
         c.insertText = string;
         c.kind = vscode.CompletionItemKind.File;
         items.push(c);
+      };
+
+      if (files.length > 0) {
+        for (const file of files)
+          add(posix.normalize(relative(directory, file.fsPath)));
+      } else {
+        add("");
       }
       return items;
     } else if (tokens.length == 1) {

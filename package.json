@@ -68,15 +68,18 @@
     "keybindings": [
       {
         "command": "spright.update",
-        "key": "Ctrl+Shift+B"
+        "key": "Ctrl+Shift+B",
+        "when": "editorLangId == spright"
       },
       {
         "command": "spright.editor",
-        "key": "Ctrl+Shift+T"
+        "key": "Ctrl+Shift+T",
+        "when": "editorLangId == spright"
       },
       {
         "command": "spright.complete",
-        "key": "Ctrl+Shift+A"
+        "key": "Ctrl+Shift+A",
+        "when": "editorLangId == spright"
       }
     ],
     "configuration": [

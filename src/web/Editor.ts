@@ -219,7 +219,7 @@ export class Editor {
       addClickHandler(refreshButton, () => {
         this.postMessage({
           type: "autocomplete",
-          filename: input.filename,
+          pattern: input.filename,
         });
       });
 

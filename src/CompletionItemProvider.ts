@@ -1,6 +1,10 @@
 import * as vscode from "vscode";
 import { SprightProvider } from "./SprightProvider";
 import { SettingsProvider } from "./SettingsProvider";
+import { dirname, posix, relative } from "path";
+
+const imageFormatExtensions = "png,bmp,gif,tga";
+const maxSuggestedInputFilenames = 100;
 
 type EnumValue = {
   name: string;
@@ -27,10 +31,10 @@ function priorize(name: string): number | undefined {
 function findEnumValues(text: string) {
   // - _value_: description<br/>
   const values: EnumValue[] = [];
-  for (const match of text.matchAll(/-\s*_([a-z-]+)_\s*:([^<]*)<br\/>/g))
+  for (const match of text.matchAll(/-\s*_([a-z-]+)_\s*:([^<]*)/g))
     values.push({
       name: match[1],
-      description: match[2],
+      description: match[2].replace(/<br\/>/g, ""),
     });
   return values;
 }
@@ -104,7 +108,7 @@ export class SprightCompletionItemProvider {
       }
       if (definition.args.length > 0) {
         c.insertText = name + " ";
-        if (definition.enumValues.length > 0) {
+        if (definition.enumValues.length > 0 || name == "input") {
           c.command = {
             command: "editor.action.triggerSuggest",
             title: "Complete arguments...",
@@ -126,19 +130,47 @@ export class SprightCompletionItemProvider {
   ) {
     await this.lazyLoadDefinitions();
 
-    const linePrefix = document
-      .lineAt(position)
-      .text.substring(0, position.character)
+    const line = document.lineAt(position).text;
+    const tokens = line
+      .substring(0, position.character)
       .trimStart()
       .split(/\s+/);
 
-    if (linePrefix.length == 1) {
+    if (tokens[0] === "input") {
+      // complete filenames
+      const beginQuote =
+        position.character > 0 && line.charAt(position.character - 1) == '"';
+      const endQuote =
+        position.character < line.length &&
+        line.charAt(position.character) == '"';
+
+      const directory = dirname(document.uri.fsPath);
+      const files = await vscode.workspace.findFiles(
+        new vscode.RelativePattern(
+          directory,
+          `**/*.{${imageFormatExtensions}}`
+        ),
+        undefined,
+        maxSuggestedInputFilenames
+      );
+      const items: vscode.CompletionItem[] = [];
+      for (const file of files) {
+        let string = `"${posix.normalize(relative(directory, file.fsPath))}"`;
+        const c = new vscode.CompletionItem(string);
+        if (beginQuote) string = string.substring(1);
+        if (endQuote) string = string.substring(0, string.length - 1);
+        c.insertText = string;
+        c.kind = vscode.CompletionItemKind.File;
+        items.push(c);
+      }
+      return items;
+    } else if (tokens.length == 1) {
       // complete definitions
       return this.definitionCompletions!;
     } else {
       // complete arguments
       const items: vscode.CompletionItem[] = [];
-      const definition = this.definitions![linePrefix[0]];
+      const definition = this.definitions![tokens[0]];
       if (definition) {
         for (const value of definition.enumValues) {
           const c = new vscode.CompletionItem(value.name);

@@ -69,7 +69,7 @@
       {
         "command": "spright.build",
         "key": "Ctrl+Shift+B",
-        "when": "editorLangId == spright"
+        "when": "editorLangId == spright || activeWebviewPanelId == spright.editor"
       },
       {
         "command": "spright.editor",
@@ -79,7 +79,7 @@
       {
         "command": "spright.complete",
         "key": "Ctrl+Shift+A",
-        "when": "editorLangId == spright"
+        "when": "editorLangId == spright || activeWebviewPanelId == spright.editor"
       }
     ],
     "configuration": [

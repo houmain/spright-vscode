@@ -86,17 +86,12 @@ export class EditorPanel {
           return this.activeDocument.updateOutput();
 
         case "openDocument":
-          if (this.activeDocument.document)
-            return utils.openInTextEditor(this.activeDocument.document.uri);
-          break;
+          return this.activeDocument.reveal();
 
         case "selectLine":
-          if (this.activeDocument.document)
-            return utils.openInTextEditor(
-              this.activeDocument.document.uri,
-              new vscode.Range(e.lineNo, e.columnNo || 0, e.lineNo, 1000000)
-            );
-          break;
+          return this.activeDocument.reveal(
+            new vscode.Range(e.lineNo, e.columnNo || 0, e.lineNo, 1000000)
+          );
       }
     });
 

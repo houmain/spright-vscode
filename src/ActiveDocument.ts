@@ -21,6 +21,7 @@ export class ActiveDocument {
   private documentValidators = new Map<vscode.Uri, DocumentValidator>();
   private validating = false;
   private validateOnceMore = false;
+  private viewColumn?: vscode.ViewColumn;
 
   document?: vscode.TextDocument;
   describeOnlyInput = true;
@@ -51,6 +52,7 @@ export class ActiveDocument {
 
   private onActiveTextEditorChanged(editor?: vscode.TextEditor) {
     if (editor?.document.languageId == "spright") {
+      this.viewColumn = editor.viewColumn;
       this.document = editor.document;
       this.validate();
     }
@@ -155,5 +157,16 @@ export class ActiveDocument {
       await validator.updateOutput(this.spright, this.settings);
       this.updateDiagnostics(validator);
     }
+  }
+
+  async reveal(range?: vscode.Range) {
+    if (!this.document) return;
+    const selection = range
+      ? new vscode.Selection(range.start, range.end)
+      : undefined;
+    return vscode.window.showTextDocument(this.document, {
+      selection: selection,
+      viewColumn: this.viewColumn,
+    });
   }
 }

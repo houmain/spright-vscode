@@ -82,8 +82,8 @@ export class EditorPanel {
         case "autocomplete":
           return this.activeDocument.autocompleteConfig(e.pattern);
 
-        case "update":
-          return this.activeDocument.updateOutput();
+        case "build":
+          return this.activeDocument.buildOutput();
 
         case "openDocument":
           return this.activeDocument.reveal();

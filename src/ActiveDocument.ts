@@ -151,10 +151,10 @@ export class ActiveDocument {
     }
   }
 
-  async updateOutput() {
+  async buildOutput() {
     if (this.document && this.spright) {
       const validator = this.getValidator(this.document);
-      await validator.updateOutput(this.spright, this.settings);
+      await validator.buildOutput(this.spright, this.settings);
       this.updateDiagnostics(validator);
     }
   }

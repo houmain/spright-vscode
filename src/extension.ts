@@ -40,8 +40,8 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("spright.update", () => {
-      return activeDocument.updateOutput();
+    vscode.commands.registerCommand("spright.build", () => {
+      return activeDocument.buildOutput();
     })
   );
 

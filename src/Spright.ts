@@ -78,7 +78,7 @@ export class Spright {
     });
   }
 
-  async updateOutput(
+  async buildOutput(
     configFilename: string,
     config: string,
     output?: string,

@@ -137,15 +137,15 @@ export class Editor {
     const itemsDiv = document.createElement("div");
     itemsDiv.className = "items";
 
-    const updateButton = appendElement(itemsDiv, "button", "update");
-    updateButton.innerText = "update";
-    addClickHandler(updateButton, () => {
+    const buildButton = appendElement(itemsDiv, "button", "build");
+    buildButton.innerText = "build";
+    addClickHandler(buildButton, () => {
       this.postMessage({
-        type: "update",
+        type: "build",
       });
     });
 
-    const completeButton = appendElement(itemsDiv, "button", "complete");
+    const completeButton = appendElement(itemsDiv, "button", "auto");
     completeButton.innerText = "auto";
     addClickHandler(completeButton, () => {
       this.postMessage({
@@ -202,8 +202,9 @@ export class Editor {
         continue;
 
       const inputDiv = appendElement(inputsDiv, "div", "input");
+      const titleDiv = appendElement(inputDiv, "div", "title");
 
-      if (configInput)
+      if (configInput) {
         addDoubleClickHandler(inputDiv, () => {
           this.postMessage({
             type: "selectLine",
@@ -212,16 +213,15 @@ export class Editor {
           });
         });
 
-      const titleDiv = appendElement(inputDiv, "div", "title");
-
-      const refreshButton = appendElement(titleDiv, "button", "refresh");
-      refreshButton.innerText = "auto";
-      addClickHandler(refreshButton, () => {
-        this.postMessage({
-          type: "autocomplete",
-          pattern: input.filename,
+        const autoButton = appendElement(titleDiv, "button", "auto");
+        autoButton.innerText = "auto";
+        addClickHandler(autoButton, () => {
+          this.postMessage({
+            type: "autocomplete",
+            pattern: input.filename,
+          });
         });
-      });
+      }
 
       const textDiv = appendElement(titleDiv, "div", "text");
       textDiv.innerText = input.filename;

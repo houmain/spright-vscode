@@ -94,7 +94,7 @@ export class DocumentValidator {
     }
   }
 
-  async updateOutput(spright: Spright, settings: Settings) {
+  async buildOutput(spright: Spright, settings: Settings) {
     return vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
@@ -106,7 +106,7 @@ export class DocumentValidator {
 
         return new Promise<void>((resolve) => {
           spright
-            .updateOutput(
+            .buildOutput(
               this.document.fileName,
               this.document.getText(),
               settings.output,

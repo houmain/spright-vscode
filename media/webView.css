@@ -12,7 +12,7 @@ body.vscode-dark {
   z-index: 20;
   padding: 4px;
   width: 100%;
-  background: #f0f0f0;
+  background: var(--vscode-titleBar-activeBackground);
 }
 
 #toolbar * {
@@ -44,7 +44,7 @@ body.vscode-dark {
   position: relative;
   background-color: var(--vscode-titleBar-activeBackground);
   color: var(--vscode-titleBar-activeForeground);
-  border: 1px solid gray;
+  border: 1px solid var(--vscode-editor-foreground);
   border-radius: 5px;
   padding: 3px;
 }
@@ -77,6 +77,10 @@ body.vscode-dark {
   display: inline-block;
   border: 1px solid gray;
   background: repeating-conic-gradient(#eee 0% 25%, #ddd 0% 50%) 50% / 16px 16px;
+}
+
+body.vscode-dark .source .frame {
+  background: repeating-conic-gradient(#333 0% 25%, #555 0% 50%) 50% / 16px 16px;
 }
 
 .sprites {

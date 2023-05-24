@@ -48,6 +48,7 @@ button {
   border: none;
   padding: var(--button-padding-vertical) var(--input-padding-horizontal);
   text-align: center;
+  font-variant: all-small-caps;
   outline: 1px solid transparent;
   outline-offset: 2px !important;
   color: var(--vscode-button-foreground);

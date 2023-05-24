@@ -4,7 +4,6 @@ import { SprightCompletionItemProvider } from "./CompletionItemProvider";
 import { DocumentDropEditProvider } from "./DocumentDropEditProvider";
 import { SettingsProvider } from "./SettingsProvider";
 import { SprightProvider } from "./SprightProvider";
-import { Parameters } from "./Spright";
 import { EditorPanel } from "./EditorPanel";
 import { ActiveDocument } from "./ActiveDocument";
 

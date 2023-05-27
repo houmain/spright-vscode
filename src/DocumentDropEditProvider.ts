@@ -16,22 +16,18 @@ function importSpriteSheet(
   let snippet = "";
 
   const addFrame = function (filename: string, frame: any) {
-    const rect = frame.frame;
-    if (frame.rotated) {
-      const t = rect.h;
-      rect.h = rect.w;
-      rect.w = t;
-    }
     snippet += `${indent1}sprite "${filename}"` + "\n";
-    snippet += `${indent2}rect ${rect.x} ${rect.y} ${rect.w} ${rect.h}` + "\n";
-    const sss = frame?.spriteSourceSize;
-    if (sss?.x && sss?.y) {
-      snippet += `${indent2}align ${sss.x} ${sss.y}` + "\n";
+    const f = frame.frame ?? {};
+    const sss = frame.spriteSourceSize ?? {};
+    const ss = frame.sourceSize ?? {};
+    if (frame.rotated) {
+      [f.w, f.h] = [f.h, f.w];
+      [sss.x, sss.y] = [sss.y, sss.x];
+      [ss.w, ss.h] = [ss.h, ss.w];
     }
-    const ss = frame?.sourceSize;
-    if (ss?.w && ss?.h) {
-      snippet += `${indent2}min-bounds ${ss.w} ${ss.h}` + "\n";
-    }
+    snippet += `${indent2}rect ${f.x} ${f.y} ${f.w} ${f.h}` + "\n";
+    if (sss.x && sss.y) snippet += `${indent2}align ${sss.x} ${sss.y}` + "\n";
+    if (ss.w && ss.h) snippet += `${indent2}min-bounds ${ss.w} ${ss.h}` + "\n";
   };
   const addFrames = function (frames: any) {
     if (frames[0]) {

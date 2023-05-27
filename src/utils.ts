@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as path from "path";
 import * as http from "http";
 import * as https from "https";
 import * as extract from "extract-zip";
@@ -52,6 +53,14 @@ export function fileExists(filename: string) {
   });
 }
 
+export function directoryExist(path: string) {
+  return fs.statSync(path).isDirectory();
+}
+
+export function relativePath(directory: string, filename: string) {
+  return path.posix.normalize(path.relative(directory, filename));
+}
+
 export function makeDirectory(directory: string) {
   return new Promise<boolean>((resolve, reject) => {
     fs.mkdir(directory, { recursive: true }, (err) => {
@@ -92,6 +101,17 @@ export function toNewLineSeparators(text: string) {
   const lineSeparator = getLineSeparator(text);
   if (lineSeparator == "\n") return text;
   return text.split(lineSeparator).join("\n");
+}
+
+export function removeQuotes(text: string) {
+  text = text.trim();
+  if (text.startsWith('"') || text.startsWith("'"))
+    text = text.substring(1, text.length - 1);
+  return text;
+}
+
+export function removeComments(text: string) {
+  return text.replace(/#.*/, "").trimEnd();
 }
 
 export function getDifferingRange(current: string[], source: string[]) {

@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
+import * as utils from "./utils";
+import * as common from "./common";
 import { SprightProvider } from "./SprightProvider";
 import { SettingsProvider } from "./SettingsProvider";
-import { dirname, posix, relative } from "path";
 
-const imageFormatExtensions = "png,bmp,gif,tga";
+const imageFormatExtensions = "png,PNG,bmp,BMP,gif,GIF,tga,TGA";
 const maxSuggestedInputFilenames = 100;
 
 type EnumValue = {
@@ -144,7 +145,10 @@ export class SprightCompletionItemProvider {
         position.character < line.length &&
         line.charAt(position.character) == '"';
 
-      const directory = dirname(document.uri.fsPath);
+      const directory = common.getConfigLineDirectory(
+        document,
+        position
+      ).fsPath;
       const files = await vscode.workspace.findFiles(
         new vscode.RelativePattern(
           directory,
@@ -167,7 +171,7 @@ export class SprightCompletionItemProvider {
 
       if (files.length > 0) {
         for (const file of files)
-          add(posix.normalize(relative(directory, file.fsPath)));
+          add(utils.relativePath(directory, file.fsPath));
       } else {
         add("");
       }

@@ -1,22 +1,115 @@
 import * as vscode from "vscode";
 import * as common from "./common";
 import * as utils from "./utils";
+import { Description, Texture } from "./web/Description";
 
 const uriListMime = "text/uri-list";
 
-function importSpriteSheet(
-  directory: vscode.Uri,
-  toRelativePath: (uri: vscode.Uri) => string,
-  json: any,
-  indent: string
-) {
+function accessible(test: () => void) {
+  try {
+    return test() !== undefined;
+  } catch {
+    return false;
+  }
+}
+
+function getIndents(indent: string) {
   const levelIndent = indent[0] == "\t" ? "\t" : "  ";
   const indent1 = indent + levelIndent;
   const indent2 = indent1 + levelIndent;
-  let snippet = "";
+  const indent3 = indent2 + levelIndent;
+  return [indent1, indent2, indent3];
+}
 
+function isSprightDescription(json: any) {
+  return accessible(() => json.sources[json.sprites[0].sourceIndex].filename);
+}
+
+function importSprightDescription(
+  desc: Description,
+  directory: vscode.Uri,
+  toRelativePath: (uri: vscode.Uri) => string,
+  indent: string
+) {
+  const [indent1, indent2, indent3] = getIndents(indent);
+
+  let snippet = "";
+  const addLine = (line?: string) => {
+    snippet += (line ?? "") + "\n";
+  };
+  const resolve = (filename?: string) => {
+    if (!filename) return "";
+    return toRelativePath(vscode.Uri.joinPath(directory, filename));
+  };
+
+  const sliceTextureFilenames: string[] = [];
+  for (const texture of desc.textures)
+    if (!sliceTextureFilenames[texture.sliceIndex] && texture.scale == 1)
+      sliceTextureFilenames[texture.sliceIndex] = texture.filename;
+  for (const texture of desc.textures)
+    if (!sliceTextureFilenames[texture.sliceIndex])
+      throw "Cannot import when output was scaled";
+
+  let sourceIndex = 0;
+  addLine(`${indent}pack origin`);
+  for (const source of desc.sources) {
+    addLine(`${indent}sheet "sheet${sourceIndex}"`);
+    addLine(`${indent1}output "${source.filename}"`);
+    addLine(`${indent1}min-bounds ${source.width} ${source.height}`);
+    let prevInputFilename = "";
+    for (const input of desc.inputs) {
+      for (const inputSource of input.sources) {
+        if (inputSource.index == sourceIndex) {
+          for (const spriteIndex of inputSource.spriteIndices) {
+            const sprite = desc.sprites[spriteIndex];
+            const inputFilename = sliceTextureFilenames[sprite.sliceIndex!];
+            if (inputFilename != prevInputFilename) {
+              addLine(`${indent1}input "${resolve(inputFilename)}"`);
+              prevInputFilename = inputFilename;
+            }
+            addLine(`${indent2}sprite`);
+            const r = sprite.trimmedRect!;
+            const sr = sprite.trimmedSourceRect!;
+            if (sprite.rotated) {
+              [r.w, r.h] = [r.h, r.w];
+              [sr.x, sr.y] = [sr.y, sr.x];
+              addLine(`${indent3}min-bounds ${source.height} ${source.width}`);
+            }
+            addLine(`${indent3}rect ${r.x} ${r.y} ${r.w} ${r.h}`);
+            addLine(`${indent3}align ${sr.x} ${sr.y}`);
+          }
+        }
+      }
+    }
+    addLine();
+    ++sourceIndex;
+  }
+  return snippet;
+}
+
+// Phaser2 / Phaser3 / PixiJS
+function isPhaserJSON(json: any) {
+  return (
+    accessible(() => json.frames[0].frame) ||
+    accessible(() => json.frames[Object.keys(json.frames)[0]].frame) ||
+    accessible(() => json.textures[0].frames[0])
+  );
+}
+
+function importPhaserJSON(
+  json: any,
+  directory: vscode.Uri,
+  toRelativePath: (uri: vscode.Uri) => string,
+  indent: string
+) {
+  const [indent1, indent2] = getIndents(indent);
+
+  let snippet = "";
+  const addLine = (line?: string) => {
+    snippet += (line ?? "") + "\n";
+  };
   const addFrame = function (filename: string, frame: any) {
-    snippet += `${indent1}sprite "${filename}"` + "\n";
+    addLine(`${indent1}sprite "${filename}"`);
     const f = frame.frame ?? {};
     const sss = frame.spriteSourceSize ?? {};
     const ss = frame.sourceSize ?? {};
@@ -25,9 +118,9 @@ function importSpriteSheet(
       [sss.x, sss.y] = [sss.y, sss.x];
       [ss.w, ss.h] = [ss.h, ss.w];
     }
-    snippet += `${indent2}rect ${f.x} ${f.y} ${f.w} ${f.h}` + "\n";
-    if (sss.x && sss.y) snippet += `${indent2}align ${sss.x} ${sss.y}` + "\n";
-    if (ss.w && ss.h) snippet += `${indent2}min-bounds ${ss.w} ${ss.h}` + "\n";
+    addLine(`${indent2}rect ${f.x} ${f.y} ${f.w} ${f.h}`);
+    if (ss.w && ss.h) addLine(`${indent2}min-bounds ${ss.w} ${ss.h}`);
+    if (sss.x && sss.y) addLine(`${indent2}align ${sss.x} ${sss.y}`);
   };
   const addFrames = function (frames: any) {
     if (frames[0]) {
@@ -45,20 +138,34 @@ function importSpriteSheet(
     return toRelativePath(vscode.Uri.joinPath(directory, filename));
   };
 
-  if (json.frames) {
-    // Phaser2 / PixiJS
-    snippet += `${indent}input "${resolve(json.meta?.image)}"` + "\n";
-    addFrames(json.frames);
-  } else if (json.textures) {
-    // Phaser3
+  addLine(`pack single`);
+  addLine(`output "{{ sprite.id }}"`);
+  addLine();
+  if (json.textures) {
     for (const texture of json.textures) {
-      snippet += `${indent}input "${resolve(texture.image)}"` + "\n";
+      addLine(`${indent}input "${resolve(texture.image)}"`);
       addFrames(texture.frames);
     }
   } else {
-    throw "unknown format";
+    addLine(`${indent}input "${resolve(json.meta?.image)}"`);
+    addFrames(json.frames);
   }
   return snippet;
+}
+
+function importJSON(
+  json: any,
+  directory: vscode.Uri,
+  toRelativePath: (uri: vscode.Uri) => string,
+  indent: string
+) {
+  if (isSprightDescription(json))
+    return importSprightDescription(json, directory, toRelativePath, indent);
+
+  if (isPhaserJSON(json))
+    return importPhaserJSON(json, directory, toRelativePath, indent);
+
+  throw "Unknown format";
 }
 
 function getInputIndent(
@@ -118,11 +225,10 @@ export class DocumentDropEditProvider
 
     if (uris[0].fsPath.toLocaleLowerCase().endsWith(".json")) {
       try {
-        const json = JSON.parse(await utils.readTextFile(uris[0].fsPath));
-        snippet += importSpriteSheet(
+        snippet += importJSON(
+          JSON.parse(await utils.readTextFile(uris[0].fsPath)),
           common.getDirectoryUri(uris[0]),
           toRelativePath,
-          json,
           indent
         );
       } catch (ex) {

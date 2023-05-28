@@ -1,4 +1,3 @@
-
 export type InputSource = {
   index: number;
   spriteIndices: number[];
@@ -10,7 +9,6 @@ export type Input = {
 };
 
 export type Source = {
-  index: number;
   filename: string;
   path: string;
   width: number;
@@ -50,8 +48,24 @@ export type Sprite = {
   vertices?: Point[];
 };
 
+export type Slice = {
+  spriteIndices: number[];
+};
+
+export type Texture = {
+  sliceIndex: number;
+  spriteIndices: number[];
+  filename: string;
+  width: number;
+  height: number;
+  map: string;
+  scale: number;
+};
+
 export type Description = {
   inputs: Input[];
   sources: Source[];
+  slices: Slice[];
   sprites: Sprite[];
+  textures: Texture[];
 };

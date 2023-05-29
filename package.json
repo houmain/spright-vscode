@@ -23,7 +23,8 @@
     "spritesheet"
   ],
   "categories": [
-    "Other"
+    "Languages",
+    "Visualization"
   ],
   "icon": "media/icon.png",
   "activationEvents": [

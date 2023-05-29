@@ -54,15 +54,15 @@
     "commands": [
       {
         "command": "spright.editor",
-        "title": "Show Spright editor panel."
+        "title": "Show Spright editor panel"
       },
       {
         "command": "spright.build",
-        "title": "Build Spright output."
+        "title": "Build Spright output"
       },
       {
         "command": "spright.complete",
-        "title": "Complete Spright configuration."
+        "title": "Complete Spright configuration"
       }
     ],
     "keybindings": [
@@ -89,7 +89,7 @@
           "spright.sprightVersion": {
             "order": 1,
             "type": "string",
-            "default": "3.2.0",
+            "default": "3.3.0",
             "description": "Sets the Spright version the extension should use."
           },
           "spright.output": {

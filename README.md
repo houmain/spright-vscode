@@ -2,6 +2,8 @@
 
 This extension provides an advanced editor for [Spright](https://github.com/houmain/spright#spright) configuration files.
 
+## Introduction
+
 - Files named `spright.conf` are automatically detected as _Spright Configuration_, for others it can be selected using _Change Language Mode_ . <kbd>Ctrl-K M</kbd>
 - A graphical visualization of the configuration can be opened using _Show Spright editor panel_. <kbd>Ctrl-Shift-T</kbd>
 - Sheet building can be triggered using _Build Spright output_. <kbd>Ctrl-Shift-B</kbd>
@@ -10,9 +12,11 @@ This extension provides an advanced editor for [Spright](https://github.com/houm
 
 Please see the [Spright reference](https://github.com/houmain/spright#spright) for details on how to write configuration files.
 
+## Preview
+
 This clip shows the extension in action:
 
-<img src="intro.gif"/>
+<img src="https://raw.githubusercontent.com/houmain/spright-vscode/main/intro.gif"/>
 
 ## License
 

@@ -7,6 +7,7 @@ const platformSuffix = (() => {
   if (process.platform === "win32" && process.arch == "x64") return "win64";
   if (process.platform === "linux" && process.arch == "x64") return "Linux";
   if (process.platform === "darwin" && process.arch == "x64") return "Darwin";
+  if (process.platform === "darwin" && process.arch == "arm64") return "Darwin-arm64";
   return `${process.platform}-${process.arch}`;
 })();
 

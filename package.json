@@ -2,7 +2,7 @@
   "name": "spright-vscode",
   "displayName": "Spright Configuration Editor",
   "description": "Editor for spright configurations",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "publisher": "houmain",
   "author": {
     "name": "Albert Kalchmair"
@@ -20,11 +20,11 @@
     "vscode": "^1.74.0"
   },
   "keywords": [
-    "spritesheet"
+    "sprite", "sprite sheet", "atlas", "texture", "texture atlas", "texture packer"
   ],
   "categories": [
     "Languages",
-    "Visualization"
+    "Other"
   ],
   "icon": "media/icon.png",
   "activationEvents": [
@@ -90,7 +90,7 @@
           "spright.sprightVersion": {
             "order": 1,
             "type": "string",
-            "default": "3.3.0",
+            "default": "3.4.0",
             "description": "Sets the Spright version the extension should use."
           },
           "spright.output": {

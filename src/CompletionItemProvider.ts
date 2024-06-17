@@ -19,7 +19,7 @@ type Definition = {
   enumValues: EnumValue[];
 };
 
-function priorize(name: string): number | undefined {
+function prioritize(name: string): number | undefined {
   switch (name) {
     case "sprite":
       return 1;
@@ -91,10 +91,10 @@ export class SprightCompletionItemProvider {
       console.log("Loading definitions failed: ", ex);
       this.definitions = {};
     }
-    this.definitionCompletions = this.createDefinitionCompeltions();
+    this.definitionCompletions = this.createDefinitionCompletions();
   }
 
-  private createDefinitionCompeltions() {
+  private createDefinitionCompletions() {
     const items: vscode.CompletionItem[] = [];
     for (const name in this.definitions) {
       const definition = this.definitions[name];
@@ -102,7 +102,7 @@ export class SprightCompletionItemProvider {
       c.detail = "Arguments: " + definition.args;
       c.documentation = parseDocumentation(definition.description);
       c.kind = vscode.CompletionItemKind.Field;
-      const priority = priorize(name);
+      const priority = prioritize(name);
       if (priority) {
         c.sortText = priority.toString() + " " + name;
         c.preselect = true;

@@ -2,7 +2,7 @@
   "name": "spright-vscode",
   "displayName": "Spright Configuration Editor",
   "description": "Editor for spright configurations",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "publisher": "houmain",
   "author": {
     "name": "Albert Kalchmair"
@@ -90,7 +90,7 @@
           "spright.sprightVersion": {
             "order": 1,
             "type": "string",
-            "default": "3.4.0",
+            "default": "3.5.0",
             "description": "Sets the Spright version the extension should use."
           },
           "spright.output": {

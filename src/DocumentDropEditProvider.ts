@@ -58,9 +58,9 @@ function importSprightDescription(
     addLine(`${indent1}min-bounds ${source.width} ${source.height}`);
     let prevInputFilename = "";
     for (const input of desc.inputs) {
-      for (const inputSource of input.sources) {
-        if (inputSource.index == sourceIndex) {
-          for (const spriteIndex of inputSource.spriteIndices) {
+      for (const sourceSprites of input.sourceSprites) {
+        if (sourceSprites.sourceIndex == sourceIndex) {
+          for (const spriteIndex of sourceSprites.spriteIndices) {
             const sprite = desc.sprites[spriteIndex];
             const inputFilename = sliceTextureFilenames[sprite.sliceIndex!];
             if (inputFilename != prevInputFilename) {

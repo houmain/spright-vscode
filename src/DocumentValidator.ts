@@ -6,8 +6,10 @@ import { Settings } from "./SettingsProvider";
 
 const emptyDescription: Description = {
   inputs: [],
+  sheets: [],
   sources: [],
   sprites: [],
+  textures: []
 };
 
 function parseErrorOutput(document: vscode.TextDocument, output: string) {

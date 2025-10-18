@@ -9,6 +9,7 @@ This extension provides an advanced editor for [Spright](https://github.com/houm
 - Sheet building can be triggered using _Build Spright output_. <kbd>Ctrl-Shift-B</kbd>
 - Auto-completion of the configuration file can be triggered by _Complete Spright configuration_. <kbd>Ctrl-Shift-A</kbd>
 - Image file and directories can be dropped on the editor to insert _input_ and _glob_ definitions.
+- JSON sprite sheets can be dropped on the editor to reconstruct the configuration.
 
 Please see the [Spright reference](https://github.com/houmain/spright#spright) for details on how to write configuration files.
 

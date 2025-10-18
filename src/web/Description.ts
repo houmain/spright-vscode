@@ -1,11 +1,11 @@
-export type InputSource = {
-  index: number;
+export type SourceSprites = {
+  sourceIndex: number;
   spriteIndices: number[];
 };
 
 export type Input = {
   filename: string;
-  sources: InputSource[];
+  sourceSprites: SourceSprites[];
 };
 
 export type Source = {
@@ -48,6 +48,10 @@ export type Sprite = {
   vertices?: Point[];
 };
 
+export type Sheet = {
+  slices: Slice[];
+};
+
 export type Slice = {
   spriteIndices: number[];
 };
@@ -65,7 +69,7 @@ export type Texture = {
 export type Description = {
   inputs: Input[];
   sources: Source[];
-  slices: Slice[];
+  sheets: Sheet[];
   sprites: Sprite[];
   textures: Texture[];
 };

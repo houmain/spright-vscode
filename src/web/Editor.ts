@@ -198,7 +198,7 @@ export class Editor {
     for (const input of this.description.inputs) {
       const configInput = this.config.inputs[inputIndex++];
 
-      if (configInput?.sprites.length == 0 && input.sources.length == 0)
+      if (configInput?.sprites.length == 0 && input.sourceSprites.length == 0)
         continue;
 
       const inputDiv = appendElement(inputsDiv, "div", "input");
@@ -226,11 +226,11 @@ export class Editor {
       const textDiv = appendElement(titleDiv, "div", "text");
       textDiv.innerText = input.filename;
 
-      if (input.sources.length > 0) {
+      if (input.sourceSprites.length > 0) {
         let spriteIndex = 0;
         const sourcesDiv = appendElement(inputDiv, "div", "sources");
-        for (const inputSource of input.sources) {
-          const source = this.description.sources[inputSource.index];
+        for (const sourceSprites of input.sourceSprites) {
+          const source = this.description.sources[sourceSprites.sourceIndex];
           const sourceDiv = appendElement(sourcesDiv, "div", "source");
 
           const spritesFrameDiv = appendElement(sourceDiv, "div", "frame");
@@ -239,7 +239,7 @@ export class Editor {
           spritesDiv.style.setProperty("--width", source.width + "px");
           spritesDiv.style.setProperty("--height", source.height + "px");
 
-          for (const index of inputSource.spriteIndices) {
+          for (const index of sourceSprites.spriteIndices) {
             const sprite = this.description.sprites[index];
             const configSprite = configInput?.sprites[spriteIndex++];
 

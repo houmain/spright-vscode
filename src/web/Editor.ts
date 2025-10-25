@@ -43,6 +43,17 @@ function addDoubleClickHandler(element: HTMLElement, func: () => void) {
   });
 }
 
+function addVisibilityHandler(element: HTMLElement, func: () => void) {
+  new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.intersectionRatio > 0) {
+        func();
+        observer.disconnect();
+      }
+    });
+  }).observe(element);
+}
+
 type State = {
   config: string;
   description: Description;
@@ -227,7 +238,7 @@ export class Editor {
       textDiv.innerText = input.filename;
 
       if (input.sourceSprites.length > 0) {
-        let spriteIndex = 0;
+        let inputSpriteOffset = 0;
         const sourcesDiv = appendElement(inputDiv, "div", "sources");
         for (const sourceSprites of input.sourceSprites) {
           const source = this.description.sources[sourceSprites.sourceIndex];
@@ -235,55 +246,61 @@ export class Editor {
 
           const spritesFrameDiv = appendElement(sourceDiv, "div", "frame");
           const spritesDiv = appendElement(spritesFrameDiv, "div", "sprites");
-          spritesDiv.style.setProperty("--filename", `url('${source.uri}'`);
           spritesDiv.style.setProperty("--width", source.width + "px");
           spritesDiv.style.setProperty("--height", source.height + "px");
 
-          for (const index of sourceSprites.spriteIndices) {
-            const sprite = this.description.sprites[index];
-            const configSprite = configInput?.sprites[spriteIndex++];
+          addVisibilityHandler(spritesDiv, () => {
+            spritesDiv.style.setProperty("--filename", `url('${source.uri}'`);
 
-            if (this.showTrimmedRect.checked && sprite.trimmedSourceRect) {
-              appendRect(spritesDiv, sprite.trimmedSourceRect, "trimmed-rect");
-            }
+            let spriteIndex = inputSpriteOffset;
+            for (const index of sourceSprites.spriteIndices) {
+              const sprite = this.description.sprites[index];
+              const configSprite = configInput?.sprites[spriteIndex++];
 
-            const spriteDiv = appendRect(
-              spritesDiv,
-              sprite.sourceRect,
-              "sprite"
-            );
+              if (this.showTrimmedRect.checked && sprite.trimmedSourceRect) {
+                appendRect(spritesDiv, sprite.trimmedSourceRect, "trimmed-rect");
+              }
 
-            if (
-              this.showPivot.checked &&
-              sprite.pivot &&
-              sprite.trimmedSourceRect &&
-              sprite.rect &&
-              sprite.trimmedRect
-            ) {
-              const rx =
-                sprite.trimmedSourceRect.x +
-                (sprite.rect.x - sprite.trimmedRect.x);
-              const ry =
-                sprite.trimmedSourceRect.y +
-                (sprite.rect.y - sprite.trimmedRect.y);
-              const pivotDiv = appendElement(spritesDiv, "div", "pivot");
-              pivotDiv.style.setProperty("--x", rx + sprite.pivot.x + "px");
-              pivotDiv.style.setProperty("--y", ry + sprite.pivot.y + "px");
-            }
-            if (this.showId.checked) {
-              const textDiv = appendElement(spriteDiv, "div", "text");
-              textDiv.innerText = sprite.id;
-            }
+              const spriteDiv = appendRect(
+                spritesDiv,
+                sprite.sourceRect,
+                "sprite"
+              );
 
-            if (configSprite)
-              addDoubleClickHandler(spriteDiv, () => {
-                this.postMessage({
-                  type: "selectLine",
-                  lineNo: configSprite.lineNo,
-                  columnNo: this.config.getParameterColumn(configSprite),
+              if (
+                this.showPivot.checked &&
+                sprite.pivot &&
+                sprite.trimmedSourceRect &&
+                sprite.rect &&
+                sprite.trimmedRect
+              ) {
+                const rx =
+                  sprite.trimmedSourceRect.x +
+                  (sprite.rect.x - sprite.trimmedRect.x);
+                const ry =
+                  sprite.trimmedSourceRect.y +
+                  (sprite.rect.y - sprite.trimmedRect.y);
+                const pivotDiv = appendElement(spritesDiv, "div", "pivot");
+                pivotDiv.style.setProperty("--x", rx + sprite.pivot.x + "px");
+                pivotDiv.style.setProperty("--y", ry + sprite.pivot.y + "px");
+              }
+              if (this.showId.checked) {
+                const textDiv = appendElement(spriteDiv, "div", "text");
+                textDiv.innerText = sprite.id;
+              }
+
+              if (configSprite)
+                addDoubleClickHandler(spriteDiv, () => {
+                  this.postMessage({
+                    type: "selectLine",
+                    lineNo: configSprite.lineNo,
+                    columnNo: this.config.getParameterColumn(configSprite),
+                  });
                 });
-              });
-          }
+            }
+          });
+
+          inputSpriteOffset += sourceSprites.spriteIndices.length;
         }
       }
     }

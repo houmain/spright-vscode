@@ -139,7 +139,7 @@ function importPhaserJSON(
   };
 
   addLine(`pack single`);
-  addLine(`output "{{ sprite.id }}"`);
+  addLine(`output "out/{{ sprite.id }}"`);
   addLine();
   if (json.textures) {
     for (const texture of json.textures) {

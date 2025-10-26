@@ -52,9 +52,11 @@ export class ActiveDocument {
 
   private onActiveTextEditorChanged(editor?: vscode.TextEditor) {
     if (editor?.document.languageId == "spright") {
-      this.viewColumn = editor.viewColumn;
-      this.document = editor.document;
-      this.validate();
+      if (this.viewColumn != editor.viewColumn || this.document != editor.document) {
+        this.viewColumn = editor.viewColumn;
+        this.document = editor.document;
+        this.validate();
+      }
     }
   }
 

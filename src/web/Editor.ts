@@ -246,8 +246,8 @@ export class Editor {
     this.content.appendChild(inputsDiv);
   }
 
-  private addSourceDiv(inputDiv: HTMLElement, input: Input, configInput: ConfigInput) {
-    let inputSpriteOffset = 0;
+  private addSourceDiv(inputDiv: HTMLElement, input: Input, configInput?: ConfigInput) {
+    let spriteIndex = 0;
     const sourcesDiv = appendElement(inputDiv, "div", "sources");
     for (const sourceSprites of input.sourceSprites) {
       const source = this.description.sources[sourceSprites.sourceIndex];
@@ -257,6 +257,9 @@ export class Editor {
       const spritesDiv = appendElement(spritesFrameDiv, "div", "sprites");
       spritesDiv.style.setProperty("--width", source.width + "px");
       spritesDiv.style.setProperty("--height", source.height + "px");
+
+      const inputSpriteOffset = spriteIndex;
+      spriteIndex += sourceSprites.spriteIndices.length;
 
       addVisibilityHandler(spritesDiv, () => {
         spritesDiv.style.setProperty("--filename", `url('${source.uri}'`);
@@ -304,8 +307,6 @@ export class Editor {
             });
         }
       });
-
-      inputSpriteOffset += sourceSprites.spriteIndices.length;
     }
   }
 }

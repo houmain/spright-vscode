@@ -71,6 +71,8 @@ export class Editor {
   private showId!: HTMLInputElement;
   private showPivot!: HTMLInputElement;
   private showTrimmedRect!: HTMLInputElement;
+  private cachedElements: Map<any, HTMLElement> = new Map();
+  private cachedElementsNew: Map<any, HTMLElement> = new Map();
 
   constructor(
     private toolbar: HTMLElement,
@@ -145,6 +147,16 @@ export class Editor {
         this.showPivot.checked || this.showTrimmedRect.checked
       ),
     });
+  }
+
+  private cacheElement(key: any, element: HTMLElement) {
+    this.cachedElementsNew.set(key, element);
+  }
+
+  private tryGetCachedElement(key: any) {
+    const element = this.cachedElements.get(key);
+    if (element) this.cacheElement(key, element);
+    return element;
   }
 
   private rebuildToolbar() {
@@ -246,6 +258,9 @@ export class Editor {
       }
     }
 
+    this.cachedElements = this.cachedElementsNew;
+    this.cachedElementsNew = new Map();
+
     const prevInputsDiv = this.content.getElementsByClassName("inputs").item(0);
     if (prevInputsDiv) {
       this.content.replaceChild(inputsDiv, prevInputsDiv);
@@ -261,61 +276,62 @@ export class Editor {
     for (const sourceSprites of input.sourceSprites) {
       const source = this.description.sources[sourceSprites.sourceIndex];
       const sourceDiv = appendElement(sourcesDiv, "div", "source");
+      const sourceFrameDiv = appendElement(sourceDiv, "div", "frame");
 
-      const spritesFrameDiv = appendElement(sourceDiv, "div", "frame");
-      const spritesDiv = appendElement(spritesFrameDiv, "div", "sprites");
-      spritesDiv.style.setProperty("--width", source.width + "px");
-      spritesDiv.style.setProperty("--height", source.height + "px");
+      let sourceImageDiv = this.tryGetCachedElement(source.filename);
+      if (!sourceImageDiv) {
+        sourceImageDiv = createElement("div", "image");
+        this.cacheElement(source.filename, sourceImageDiv);
+        addVisibilityHandler(sourceImageDiv, () => {
+          sourceImageDiv!.style.setProperty("--filename", `url('${source.uri}'`);
+        });
+      }
+      sourceFrameDiv.appendChild(sourceImageDiv);
+      sourceImageDiv.style.setProperty("--width", source.width + "px");
+      sourceImageDiv.style.setProperty("--height", source.height + "px");
+      
+      const spritesDiv = appendElement(sourceFrameDiv, "div", "sprites");
+      for (const index of sourceSprites.spriteIndices) {
+        const sprite = this.description.sprites[index];
+        const configSprite = configInput?.sprites[spriteIndex++];
 
-      const inputSpriteOffset = spriteIndex;
-      spriteIndex += sourceSprites.spriteIndices.length;
-
-      addVisibilityHandler(spritesDiv, () => {
-        spritesDiv.style.setProperty("--filename", `url('${source.uri}'`);
-
-        let spriteIndex = inputSpriteOffset;
-        for (const index of sourceSprites.spriteIndices) {
-          const sprite = this.description.sprites[index];
-          const configSprite = configInput?.sprites[spriteIndex++];
-
-          if (this.showTrimmedRect.checked && sprite.trimmedSourceRect) {
-            appendRect(spritesDiv, sprite.trimmedSourceRect, "trimmed-rect");
-          }
-
-          const spriteDiv = appendRect(
-            spritesDiv,
-            sprite.sourceRect,
-            "sprite"
-          );
-
-          if (this.showPivot.checked &&
-            sprite.pivot &&
-            sprite.trimmedSourceRect &&
-            sprite.rect &&
-            sprite.trimmedRect) {
-            const rx = sprite.trimmedSourceRect.x +
-              (sprite.rect.x - sprite.trimmedRect.x);
-            const ry = sprite.trimmedSourceRect.y +
-              (sprite.rect.y - sprite.trimmedRect.y);
-            const pivotDiv = appendElement(spritesDiv, "div", "pivot");
-            pivotDiv.style.setProperty("--x", rx + sprite.pivot.x + "px");
-            pivotDiv.style.setProperty("--y", ry + sprite.pivot.y + "px");
-          }
-          if (this.showId.checked) {
-            const textDiv = appendElement(spriteDiv, "div", "text");
-            textDiv.innerText = sprite.id;
-          }
-
-          if (configSprite)
-            addDoubleClickHandler(spriteDiv, () => {
-              this.postMessage({
-                type: "selectLine",
-                lineNo: configSprite.lineNo,
-                columnNo: this.config.getParameterColumn(configSprite),
-              });
-            });
+        if (this.showTrimmedRect.checked && sprite.trimmedSourceRect) {
+          appendRect(spritesDiv, sprite.trimmedSourceRect, "trimmed-rect");
         }
-      });
+
+        const spriteDiv = appendRect(
+          spritesDiv,
+          sprite.sourceRect,
+          "sprite"
+        );
+
+        if (this.showPivot.checked &&
+          sprite.pivot &&
+          sprite.trimmedSourceRect &&
+          sprite.rect &&
+          sprite.trimmedRect) {
+          const rx = sprite.trimmedSourceRect.x +
+            (sprite.rect.x - sprite.trimmedRect.x);
+          const ry = sprite.trimmedSourceRect.y +
+            (sprite.rect.y - sprite.trimmedRect.y);
+          const pivotDiv = appendElement(spritesDiv, "div", "pivot");
+          pivotDiv.style.setProperty("--x", rx + sprite.pivot.x + "px");
+          pivotDiv.style.setProperty("--y", ry + sprite.pivot.y + "px");
+        }
+        if (this.showId.checked) {
+          const textDiv = appendElement(spriteDiv, "div", "text");
+          textDiv.innerText = sprite.id;
+        }
+
+        if (configSprite)
+          addDoubleClickHandler(spriteDiv, () => {
+            this.postMessage({
+              type: "selectLine",
+              lineNo: configSprite.lineNo,
+              columnNo: this.config.getParameterColumn(configSprite),
+            });
+          });
+      }
     }
     return sourcesDiv;
   }

@@ -71,6 +71,7 @@ export class Editor {
   private showId!: HTMLInputElement;
   private showPivot!: HTMLInputElement;
   private showTrimmedRect!: HTMLInputElement;
+  private showInputTitle!: HTMLInputElement;
   private cachedElements: Map<any, HTMLElement> = new Map();
   private cachedElementsNew: Map<any, HTMLElement> = new Map();
 
@@ -196,6 +197,8 @@ export class Editor {
     const showLabel = appendElement(itemsDiv, "label", "show-label");
     showLabel.innerText = "  Show:";
 
+    this.showInputTitle = appendCheckbox(itemsDiv, "show-input", "input");
+    this.showInputTitle.checked = true;    
     this.showId = appendCheckbox(itemsDiv, "show-id", "id");
     this.showId.checked = true;
     this.showTrimmedRect = appendCheckbox(
@@ -207,6 +210,7 @@ export class Editor {
     addClickHandler(this.showId, () => this.rebuildView());
     addClickHandler(this.showTrimmedRect, () => this.refreshDescription());
     addClickHandler(this.showPivot, () => this.refreshDescription());
+    addClickHandler(this.showInputTitle, () => this.refreshDescription());
 
     this.toolbar.innerHTML = "";
     this.toolbar.appendChild(itemsDiv);
@@ -228,29 +232,29 @@ export class Editor {
         continue;
 
       const inputDiv = appendElement(inputsDiv, "div", "input");
-      const titleDiv = appendElement(inputDiv, "div", "title");
-
-      if (configInput) {
-        addDoubleClickHandler(inputDiv, () => {
-          this.postMessage({
-            type: "selectLine",
-            lineNo: configInput.lineNo,
-            columnNo: this.config.getParameterColumn(configInput),
+      if (this.showInputTitle.checked) {
+        const titleDiv = appendElement(inputDiv, "div", "title");
+        if (configInput) {
+          addDoubleClickHandler(inputDiv, () => {
+            this.postMessage({
+              type: "selectLine",
+              lineNo: configInput.lineNo,
+              columnNo: this.config.getParameterColumn(configInput),
+            });
           });
-        });
 
-        const autoButton = appendElement(titleDiv, "button", "auto");
-        autoButton.innerText = "auto";
-        addClickHandler(autoButton, () => {
-          this.postMessage({
-            type: "autocomplete",
-            pattern: input.filename,
+          const autoButton = appendElement(titleDiv, "button", "auto");
+          autoButton.innerText = "auto";
+          addClickHandler(autoButton, () => {
+            this.postMessage({
+              type: "autocomplete",
+              pattern: input.filename,
+            });
           });
-        });
+        }
+        const textDiv = appendElement(titleDiv, "div", "text");
+        textDiv.innerText = input.filename;
       }
-
-      const textDiv = appendElement(titleDiv, "div", "text");
-      textDiv.innerText = input.filename;
 
       if (input.sourceSprites.length > 0) {
         const sourcesDiv = this.createSourceDiv(input, configInput);

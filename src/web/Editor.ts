@@ -3,11 +3,14 @@ import { Description, Input, Rect } from "./Description";
 
 const zoomLevels = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 8, 10];
 
+function createElement(type: string, className: string) {
+  const element = document.createElement(type);
+  element.className = className;
+  return element;
+}
+
 function appendElement(parent: HTMLElement, type: string, className: string) {
-  const div = document.createElement(type);
-  div.className = className;
-  parent.appendChild(div);
-  return div;
+  return parent.appendChild(createElement(type, className));
 }
 
 function appendRect(parent: HTMLElement, rect: Rect, className: string) {
@@ -238,17 +241,23 @@ export class Editor {
       textDiv.innerText = input.filename;
 
       if (input.sourceSprites.length > 0) {
-        this.addSourceDiv(inputDiv, input, configInput);
+        const sourcesDiv = this.createSourceDiv(input, configInput);
+        inputDiv.appendChild(sourcesDiv);
       }
     }
 
-    this.content.innerHTML = "";
-    this.content.appendChild(inputsDiv);
+    const prevInputsDiv = this.content.getElementsByClassName("inputs").item(0);
+    if (prevInputsDiv) {
+      this.content.replaceChild(inputsDiv, prevInputsDiv);
+    }
+    else {
+      this.content.appendChild(inputsDiv);
+    }
   }
 
-  private addSourceDiv(inputDiv: HTMLElement, input: Input, configInput?: ConfigInput) {
+  private createSourceDiv(input: Input, configInput?: ConfigInput) : HTMLElement {
     let spriteIndex = 0;
-    const sourcesDiv = appendElement(inputDiv, "div", "sources");
+    const sourcesDiv = createElement("div", "sources");
     for (const sourceSprites of input.sourceSprites) {
       const source = this.description.sources[sourceSprites.sourceIndex];
       const sourceDiv = appendElement(sourcesDiv, "div", "source");
@@ -308,5 +317,6 @@ export class Editor {
         }
       });
     }
+    return sourcesDiv;
   }
 }

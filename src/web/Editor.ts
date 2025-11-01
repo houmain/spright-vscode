@@ -57,21 +57,26 @@ function addVisibilityHandler(element: HTMLElement, func: () => void) {
   }).observe(element);
 }
 
+type Options = {
+  showId: boolean;
+  showPivot: boolean;
+  showTrimmedRect: boolean;
+  showInputTitle: boolean;
+};
+
 type State = {
-  config: string;
+  config: Config;
   description: Description;
+  options: Options;
 };
 
 export class Editor {
   private config: Config;
   private description: Description;
+  private options: Options;
   private zoomLevel = 2;
   private applyZoom?: () => void;
   private zoom!: HTMLSelectElement;
-  private showId!: HTMLInputElement;
-  private showPivot!: HTMLInputElement;
-  private showTrimmedRect!: HTMLInputElement;
-  private showInputTitle!: HTMLInputElement;
   private cachedElements: Map<any, HTMLElement> = new Map();
   private cachedElementsNew: Map<any, HTMLElement> = new Map();
 
@@ -83,12 +88,16 @@ export class Editor {
   ) {
     this.config = new Config("");
     this.description = {} as Description;
-    this.rebuildToolbar();
+    this.options = {
+      showId: true,
+      showInputTitle: true,
+    } as Options;
 
     const html = this.content.parentElement!.parentElement!;
     addDoubleClickHandler(html, () => {
       this.postMessage({ type: "openDocument" });
     });
+    this.rebuildToolbar();
   }
 
   updateZoomSelection() {
@@ -119,25 +128,33 @@ export class Editor {
   }
 
   setConfig(config: string, description: any) {
-    const state: State = {
-      config,
-      description,
-    };
-    this.updateState(state);
-    this.restoreState(state);
+    try {
+      this.config = new Config(config);
+      this.description = description;
+    } catch {
+      return this.showError("Parsing configuration failed");
+    }
+    this.onStateChanged();
+    this.rebuildView();
   }
 
   private showError(message: string) {
     this.content.innerHTML = `<div class='error'>${message}</div>`;
   }
 
+  onStateChanged() {
+    this.updateState({
+      config: this.config,
+      description: this.description,
+      options: this.options
+    } as State);
+  }
+
   restoreState(state: State) {
-    try {
-      this.config = new Config(state.config);
-      this.description = state.description;
-    } catch {
-      return this.showError("Parsing configuration failed");
-    }
+    this.config = state.config;
+    this.description = state.description;
+    this.options = state.options;
+    this.rebuildToolbar();
     this.rebuildView();
   }
 
@@ -145,7 +162,7 @@ export class Editor {
     this.postMessage({
       type: "refreshDescription",
       describeOnlyInput: !(
-        this.showPivot.checked || this.showTrimmedRect.checked
+        this.options.showPivot || this.options.showTrimmedRect
       ),
     });
   }
@@ -161,8 +178,7 @@ export class Editor {
   }
 
   private rebuildToolbar() {
-    const itemsDiv = document.createElement("div");
-    itemsDiv.className = "items";
+    const itemsDiv = createElement("div", "items");
 
     const buildButton = appendElement(itemsDiv, "button", "build");
     buildButton.innerText = "build";
@@ -197,28 +213,46 @@ export class Editor {
     const showLabel = appendElement(itemsDiv, "label", "show-label");
     showLabel.innerText = "  Show:";
 
-    this.showInputTitle = appendCheckbox(itemsDiv, "show-input", "input");
-    this.showInputTitle.checked = true;    
-    this.showId = appendCheckbox(itemsDiv, "show-id", "id");
-    this.showId.checked = true;
-    this.showTrimmedRect = appendCheckbox(
-      itemsDiv,
-      "show-trimmed-rect",
-      "trimmed-rect"
-    );
-    this.showPivot = appendCheckbox(itemsDiv, "show-pivot", "pivot");
-    addClickHandler(this.showId, () => this.rebuildView());
-    addClickHandler(this.showTrimmedRect, () => this.refreshDescription());
-    addClickHandler(this.showPivot, () => this.refreshDescription());
-    addClickHandler(this.showInputTitle, () => this.refreshDescription());
+    const showInputTitle = appendCheckbox(itemsDiv, "show-input", "input");
+    showInputTitle.checked = this.options.showInputTitle;
+    addClickHandler(showInputTitle, () => {
+      this.options.showInputTitle = showInputTitle.checked;
+      this.onStateChanged();
+      this.rebuildView();
+    });
 
-    this.toolbar.innerHTML = "";
-    this.toolbar.appendChild(itemsDiv);
+    const showId = appendCheckbox(itemsDiv, "show-id", "id");
+    showId.checked = this.options.showId;
+    addClickHandler(showId, () => {
+      this.options.showId = showId.checked;
+      this.onStateChanged();
+      this.rebuildView();
+    });
+
+    const showPivot = appendCheckbox(itemsDiv, "show-pivot", "pivot");
+    showPivot.checked = this.options.showPivot;
+    addClickHandler(showPivot, () => {
+      this.options.showPivot = showPivot.checked;
+      this.onStateChanged();
+      this.refreshDescription();
+    });
+
+    const showTrimmedRect = appendCheckbox(itemsDiv, "show-trimmed-rect", "trimmed-rect");
+    showTrimmedRect.checked = this.options.showTrimmedRect;
+    addClickHandler(showTrimmedRect, () => {
+      this.options.showTrimmedRect = showTrimmedRect.checked;
+      this.onStateChanged();
+      this.refreshDescription();
+    });
+
+    if (!this.toolbar.firstChild)
+      appendElement(this.toolbar, 'div', '');
+    this.toolbar.replaceChild(itemsDiv, this.toolbar.firstChild!);
   }
 
   private rebuildView() {
-    const inputsDiv = document.createElement("div");
-    inputsDiv.className = "inputs";
+    const inputsDiv = createElement("div", "inputs");
+
     this.applyZoom = () => {
       inputsDiv.style.setProperty("--zoom", this.zoomLevel.toString());
     };
@@ -232,7 +266,7 @@ export class Editor {
         continue;
 
       const inputDiv = appendElement(inputsDiv, "div", "input");
-      if (this.showInputTitle.checked) {
+      if (this.options.showInputTitle) {
         const titleDiv = appendElement(inputDiv, "div", "title");
         if (configInput) {
           addDoubleClickHandler(inputDiv, () => {
@@ -299,7 +333,7 @@ export class Editor {
         const sprite = this.description.sprites[index];
         const configSprite = configInput?.sprites[spriteIndex++];
 
-        if (this.showTrimmedRect.checked && sprite.trimmedSourceRect) {
+        if (this.options.showTrimmedRect && sprite.trimmedSourceRect) {
           appendRect(spritesDiv, sprite.trimmedSourceRect, "trimmed-rect");
         }
 
@@ -309,7 +343,7 @@ export class Editor {
           "sprite"
         );
 
-        if (this.showPivot.checked &&
+        if (this.options.showPivot &&
           sprite.pivot &&
           sprite.trimmedSourceRect &&
           sprite.rect &&
@@ -322,7 +356,7 @@ export class Editor {
           pivotDiv.style.setProperty("--x", rx + sprite.pivot.x + "px");
           pivotDiv.style.setProperty("--y", ry + sprite.pivot.y + "px");
         }
-        if (this.showId.checked) {
+        if (this.options.showId) {
           const textDiv = appendElement(spriteDiv, "div", "text");
           textDiv.innerText = sprite.id;
         }

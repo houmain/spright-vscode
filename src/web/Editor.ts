@@ -289,6 +289,9 @@ export class Editor {
         const textDiv = appendElement(titleDiv, "div", "text");
         textDiv.innerText = input.filename;
       }
+      else {
+        inputDiv.title = input.filename;
+      }
 
       if (input.sourceSprites.length > 0) {
         const sourcesDiv = this.createSourceDiv(input, configInput);
@@ -342,6 +345,7 @@ export class Editor {
           sprite.sourceRect,
           "sprite"
         );
+        spriteDiv.title = sprite.id;
 
         if (this.options.showPivot &&
           sprite.pivot &&

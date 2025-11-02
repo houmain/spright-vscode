@@ -110,6 +110,7 @@ export class Editor {
   private description: Description;
   private options: Options;
   private applyZoom?: () => void;
+  private filter!: HTMLInputElement;
   private zoom!: HTMLSelectElement;
   private cachedElements: Map<any, HTMLElement> = new Map();
   private cachedElementsNew: Map<any, HTMLElement> = new Map();
@@ -139,7 +140,12 @@ export class Editor {
     this.zoom.selectedIndex = zoomLevels.indexOf(this.options.zoomLevel);
   }
 
-  onZoom(direction: number) {
+  focusFilter() {
+    this.filter.focus();
+    this.filter.select();
+  }
+
+  changeZoom(direction: number) {
     let n = zoomLevels.indexOf(this.options.zoomLevel);
     if (n == -1) n = 2;
     if (n > 0 && direction == -1) --n;
@@ -272,14 +278,14 @@ export class Editor {
       this.refreshDescription();
     });
 
-    const filterInput = appendTextbox(itemsDiv, "filter", "  Filter:");
-    addInputHandler(filterInput, () => {
-      this.options.filter = (filterInput.value === "" ?
-        undefined : filterInput.value.toLocaleLowerCase());
+    this.filter = appendTextbox(itemsDiv, "filter", "  Filter:");
+    addInputHandler(this.filter, () => {
+      this.options.filter = (this.filter.value === "" ?
+        undefined : this.filter.value.toLocaleLowerCase());
       this.onStateChanged();
       this.rebuildView();
     });
-    filterInput.value = this.options.filter || "";
+    this.filter.value = this.options.filter || "";
 
     if (!this.toolbar.firstChild)
       appendElement(this.toolbar, 'div', '');

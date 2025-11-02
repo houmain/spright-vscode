@@ -17,8 +17,12 @@ declare const acquireVsCodeApi: any;
     sprightEditor.onMessage(event.data);
   });
 
+  window.addEventListener("keydown", (event) => {
+    if (event.ctrlKey && event.code === "KeyF") sprightEditor.focusFilter();
+  });
+
   window.addEventListener("wheel", (event) => {
-    if (event.ctrlKey) sprightEditor.onZoom(-Math.sign(event.deltaY));
+    if (event.ctrlKey) sprightEditor.changeZoom(-Math.sign(event.deltaY));
   });
 
   // Webviews are normally torn down when not visible and re-created when they become visible again.

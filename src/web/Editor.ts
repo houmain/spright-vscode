@@ -22,6 +22,22 @@ function appendRect(parent: HTMLElement, rect: Rect, className: string) {
   return rectDiv;
 }
 
+function appendSelect(parent: HTMLElement, className: string, text: string) {
+ const label = appendElement(parent, "label", className) as HTMLLabelElement;
+  label.textContent = text;
+  const select = appendElement(parent, "select", className) as HTMLSelectElement;
+  select.id = "select-" + className;
+  label.htmlFor = select.id;
+  return select;
+}
+
+function appendOption(select: HTMLSelectElement, value: string, text: string) {
+  const option = appendElement(select, "option", "zoom") as HTMLOptionElement;
+  option.value = value;
+  option.text = text;
+  return option;
+}
+
 function appendTextbox(parent: HTMLElement, className: string, text: string) {
  const label = appendElement(parent, "label", className) as HTMLLabelElement;
   label.textContent = text;
@@ -75,6 +91,7 @@ function addVisibilityHandler(element: HTMLElement, func: () => void) {
 }
 
 type Options = {
+  zoomLevel: number;
   filter?: string;
   showId: boolean;
   showPivot: boolean;
@@ -92,7 +109,6 @@ export class Editor {
   private config: Config;
   private description: Description;
   private options: Options;
-  private zoomLevel = 2;
   private applyZoom?: () => void;
   private zoom!: HTMLSelectElement;
   private cachedElements: Map<any, HTMLElement> = new Map();
@@ -109,6 +125,7 @@ export class Editor {
     this.options = {
       showId: true,
       showInputTitle: true,
+      zoomLevel: 2,
     } as Options;
 
     const html = this.content.parentElement!.parentElement!;
@@ -119,22 +136,18 @@ export class Editor {
   }
 
   updateZoomSelection() {
-    this.zoom.selectedIndex = zoomLevels.indexOf(this.zoomLevel);
-  }
-
-  applyZoomSelection() {
-    this.zoomLevel = zoomLevels[this.zoom.selectedIndex];
-    if (this.applyZoom) this.applyZoom();
+    this.zoom.selectedIndex = zoomLevels.indexOf(this.options.zoomLevel);
   }
 
   onZoom(direction: number) {
-    let n = zoomLevels.indexOf(this.zoomLevel);
+    let n = zoomLevels.indexOf(this.options.zoomLevel);
     if (n == -1) n = 2;
     if (n > 0 && direction == -1) --n;
     if (n < zoomLevels.length - 1 && direction == 1) ++n;
-    this.zoomLevel = zoomLevels[n];
+    this.options.zoomLevel = zoomLevels[n];
     if (this.applyZoom) this.applyZoom();
     this.updateZoomSelection();
+    this.onStateChanged();
   }
 
   onMessage(message: any) {
@@ -214,18 +227,14 @@ export class Editor {
       });
     });
 
-    const zoomLabel = appendElement(itemsDiv, "label", "zoom-label");
-    zoomLabel.innerText = "  Zoom:";
-    const zoom = appendElement(itemsDiv, "select", "zoom") as HTMLSelectElement;
-    for (const level of zoomLevels) {
-      const option = appendElement(zoom, "option", "zoom") as HTMLOptionElement;
-      option.value = level.toString();
-      option.text = Math.round(level * 100) + "%";
-    }
-    zoom.addEventListener("change", () => {
-      this.applyZoomSelection();
+    this.zoom = appendSelect(itemsDiv, "zoom", "  Zoom:");
+    for (const level of zoomLevels)
+      appendOption(this.zoom, level.toString(), Math.round(level * 100) + "%");
+    this.zoom.addEventListener("change", () => {
+      this.options.zoomLevel = zoomLevels[this.zoom.selectedIndex];
+      this.onStateChanged();
+      if (this.applyZoom) this.applyZoom();
     });
-    this.zoom = zoom;
     this.updateZoomSelection();
 
     const showLabel = appendElement(itemsDiv, "label", "show-label");
@@ -270,6 +279,7 @@ export class Editor {
       this.onStateChanged();
       this.rebuildView();
     });
+    filterInput.value = this.options.filter || "";
 
     if (!this.toolbar.firstChild)
       appendElement(this.toolbar, 'div', '');
@@ -284,7 +294,7 @@ export class Editor {
     const inputsDiv = createElement("div", "inputs");
 
     this.applyZoom = () => {
-      inputsDiv.style.setProperty("--zoom", this.zoomLevel.toString());
+      inputsDiv.style.setProperty("--zoom", this.options.zoomLevel.toString());
     };
     this.applyZoom();
 

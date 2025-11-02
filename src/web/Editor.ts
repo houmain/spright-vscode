@@ -22,6 +22,16 @@ function appendRect(parent: HTMLElement, rect: Rect, className: string) {
   return rectDiv;
 }
 
+function appendTextbox(parent: HTMLElement, className: string, text: string) {
+ const label = appendElement(parent, "label", className) as HTMLLabelElement;
+  label.textContent = text;
+  const input = appendElement(parent, "input", className) as HTMLInputElement;
+  input.id = "text-" + className;
+  input.type = "text";
+  label.htmlFor = input.id;
+  return input;
+}
+
 function appendCheckbox(parent: HTMLElement, className: string, text: string) {
   const input = appendElement(parent, "input", className) as HTMLInputElement;
   input.id = "checkbox-" + className;
@@ -34,6 +44,13 @@ function appendCheckbox(parent: HTMLElement, className: string, text: string) {
 
 function addClickHandler(element: HTMLElement, func: () => void) {
   element.addEventListener("click", (ev: MouseEvent) => {
+    func();
+    ev.stopPropagation();
+  });
+}
+
+function addInputHandler(element: HTMLElement, func: () => void) {
+  element.addEventListener("input", (ev: Event) => {
     func();
     ev.stopPropagation();
   });
@@ -58,6 +75,7 @@ function addVisibilityHandler(element: HTMLElement, func: () => void) {
 }
 
 type Options = {
+  filter?: string;
   showId: boolean;
   showPivot: boolean;
   showTrimmedRect: boolean;
@@ -245,9 +263,21 @@ export class Editor {
       this.refreshDescription();
     });
 
+    const filterInput = appendTextbox(itemsDiv, "filter", "  Filter:");
+    addInputHandler(filterInput, () => {
+      this.options.filter = (filterInput.value === "" ?
+        undefined : filterInput.value.toLocaleLowerCase());
+      this.onStateChanged();
+      this.rebuildView();
+    });
+
     if (!this.toolbar.firstChild)
       appendElement(this.toolbar, 'div', '');
     this.toolbar.replaceChild(itemsDiv, this.toolbar.firstChild!);
+  }
+
+  private matchesFilter(value: string) {
+    return (!this.options.filter || value.toLowerCase().includes(this.options.filter));
   }
 
   private rebuildView() {
@@ -263,6 +293,9 @@ export class Editor {
       const configInput = this.config.inputs[inputIndex++];
 
       if (configInput?.sprites.length == 0 && input.sourceSprites.length == 0)
+        continue;
+
+      if (!this.matchesFilter(input.filename))
         continue;
 
       const inputDiv = appendElement(inputsDiv, "div", "input");

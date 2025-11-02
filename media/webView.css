@@ -19,6 +19,11 @@ body.vscode-dark {
   margin-right: 4px;
 }
 
+#toolbar input[type="text"] {
+  margin-left: 4px;
+  width: 100px;
+}
+
 #toolbar input[type="checkbox"] {
   vertical-align: middle;
   margin-left: 4px;

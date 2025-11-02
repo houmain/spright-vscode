@@ -210,7 +210,10 @@ export class Editor {
 
   private tryGetCachedElement(key: any) {
     const element = this.cachedElements.get(key);
-    if (element) this.cacheElement(key, element);
+    if (element) {
+      this.cachedElements.delete(key);
+      this.cacheElement(key, element);
+    }
     return element;
   }
 

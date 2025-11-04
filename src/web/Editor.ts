@@ -103,6 +103,8 @@ type State = {
   config: string;
   description: Description;
   options: Options;
+  scrollX: number;
+  scrollY: number;
 };
 
 export class Editor {
@@ -114,6 +116,7 @@ export class Editor {
   private zoom!: HTMLSelectElement;
   private cachedElements: Map<any, HTMLElement> = new Map();
   private cachedElementsNew: Map<any, HTMLElement> = new Map();
+  private onScrollTimeout?: number;
 
   constructor(
     private toolbar: HTMLElement,
@@ -183,8 +186,15 @@ export class Editor {
     this.updateState({
       config: this.config.source,
       description: this.description,
-      options: this.options
+      options: this.options,
+      scrollX: window.scrollX,
+      scrollY: window.scrollY,
     } as State);
+  }
+
+  onScrolled() {
+    if (this.onScrollTimeout) window.clearTimeout(this.onScrollTimeout);
+    this.onScrollTimeout = window.setTimeout(() => this.onStateChanged(), 500);
   }
 
   restoreState(state: State) {
@@ -193,6 +203,7 @@ export class Editor {
     this.options = state.options;
     this.rebuildToolbar();
     this.rebuildView();
+    window.scrollTo(state.scrollX, state.scrollY);
   }
 
   private refreshDescription() {

@@ -116,6 +116,7 @@ export class Editor {
   private zoom!: HTMLSelectElement;
   private cachedElements: Map<any, HTMLElement> = new Map();
   private cachedElementsNew: Map<any, HTMLElement> = new Map();
+  private onFilterChangedTimeout?: number;
   private onScrollTimeout?: number;
 
   constructor(
@@ -168,14 +169,18 @@ export class Editor {
   }
 
   setConfig(config: string, description: any) {
+    const begin = Date.now();
     try {
       this.config = new Config(config);
       this.description = description;
     } catch {
       return this.showError("Parsing configuration failed");
     }
-    this.onStateChanged();
+    const duration = (Date.now() - begin) / 1000.0;
+    console.log("Updating configuration took", duration, "seconds");
+
     this.rebuildView();
+    this.onStateChanged();
   }
 
   private showError(message: string) {
@@ -195,6 +200,16 @@ export class Editor {
   onScrolled() {
     if (this.onScrollTimeout) window.clearTimeout(this.onScrollTimeout);
     this.onScrollTimeout = window.setTimeout(() => this.onStateChanged(), 500);
+  }
+
+  onFilterChanged() {
+    if (this.onFilterChangedTimeout) window.clearTimeout(this.onFilterChangedTimeout);
+    this.onFilterChangedTimeout = window.setTimeout(() => {
+      this.options.filter = (this.filter.value === "" ?
+        undefined : this.filter.value.toLocaleLowerCase());
+      this.onStateChanged();
+      this.rebuildView();
+    }, 500);
   }
 
   restoreState(state: State) {
@@ -293,12 +308,7 @@ export class Editor {
     });
 
     this.filter = appendTextbox(itemsDiv, "filter", "  Filter:");
-    addInputHandler(this.filter, () => {
-      this.options.filter = (this.filter.value === "" ?
-        undefined : this.filter.value.toLocaleLowerCase());
-      this.onStateChanged();
-      this.rebuildView();
-    });
+    addInputHandler(this.filter, () => { this.onFilterChanged(); });
     this.filter.value = this.options.filter || "";
 
     if (!this.toolbar.firstChild)
@@ -311,6 +321,7 @@ export class Editor {
   }
 
   private rebuildView() {
+    const begin = Date.now();
     const inputsDiv = createElement("div", "inputs");
 
     this.applyZoom = () => {
@@ -372,6 +383,8 @@ export class Editor {
     else {
       this.content.appendChild(inputsDiv);
     }
+    const duration = (Date.now() - begin) / 1000.0;
+    console.log("Rebuilding view took", duration, "seconds");
   }
 
   private createSourceDiv(input: Input, configInput?: ConfigInput) : HTMLElement {

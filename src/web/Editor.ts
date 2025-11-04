@@ -100,7 +100,7 @@ type Options = {
 };
 
 type State = {
-  config: Config;
+  config: string;
   description: Description;
   options: Options;
 };
@@ -181,14 +181,14 @@ export class Editor {
 
   onStateChanged() {
     this.updateState({
-      config: this.config,
+      config: this.config.source,
       description: this.description,
       options: this.options
     } as State);
   }
 
   restoreState(state: State) {
-    this.config = state.config;
+    this.config = new Config(state.config);
     this.description = state.description;
     this.options = state.options;
     this.rebuildToolbar();

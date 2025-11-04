@@ -65,11 +65,13 @@ function setLineParameters(line: ConfigLine, parameters: string) {
 export class Config {
   private defaultIndent: string;
   private lines: ConfigLine[];
+  public source: string;
   public inputs: Input[];
 
   constructor(source: string) {
     this.defaultIndent = "  ";
     this.lines = splitLines(source);
+    this.source = source;
     this.inputs = [];
 
     for (let i = 0; i < this.lines.length; ++i) {
@@ -88,8 +90,8 @@ export class Config {
     }
   }
 
-  public toString(): string {
-    return this.lines.map((x) => x.line).join("\n");
+  public updateSource() {
+    this.source = this.lines.map((x) => x.line).join("\n");
   }
 
   private findPropertyLineDirect(subject: Subject, definition: string) {

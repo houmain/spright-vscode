@@ -30,8 +30,8 @@ function getHtmlForWebview(
       <title>Spright Configuration Editor</title>
     </head>
     <body>
-      <div id="toolbar"></div>
-      <div id="content"></div>
+      <div id="toolbar" data-vscode-context='{ "webviewSection": "toolbar", "preventDefaultContextMenuItems": true }'></div>
+      <div id="content" data-vscode-context='{ "webviewSection": "content", "preventDefaultContextMenuItems": true }'></div>
       <script nonce="${nonce}" src="${scriptUri}"></script>
     </body>
     </html>`;

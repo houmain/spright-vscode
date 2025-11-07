@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as common from "./common";
 import * as utils from "./utils";
 import { Spright } from "./Spright";
 import { Description } from "./web/Description";
@@ -37,28 +38,6 @@ function parseErrorOutput(document: vscode.TextDocument, output: string) {
   return diagnostics;
 }
 
-async function updateDocument(document: vscode.TextDocument, config: string) {
-  const current = document.getText();
-  const lineSeparator = utils.getLineSeparator(current);
-  const currentLines = current.split(lineSeparator);
-  const configLines = utils.splitLines(config);
-  const range = utils.getDifferingRange(currentLines, configLines);
-  if (!range) return;
-  const edit = new vscode.WorkspaceEdit();
-
-  const prependNewline =
-    !current.endsWith(lineSeparator) && range.first == currentLines.length;
-  const appendNewline = range.last != currentLines.length;
-  edit.replace(
-    document.uri,
-    new vscode.Range(range.first, 0, range.last, 0),
-    (prependNewline ? lineSeparator : "") +
-      range.diff.join(lineSeparator) +
-      (appendNewline ? lineSeparator : "")
-  );
-  return vscode.workspace.applyEdit(edit);
-}
-
 export class DocumentValidator {
   config = "";
   description = emptyDescription;
@@ -92,7 +71,7 @@ export class DocumentValidator {
     );
     this.diagnostics = parseErrorOutput(this.document, result.stderr);
     if (result.stdout.length > 0) {
-      return updateDocument(this.document, result.stdout);
+      return common.updateDocument(this.document, result.stdout);
     }
   }
 

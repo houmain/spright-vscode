@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as common from "./common";
 import { SettingsProvider, Settings } from "./SettingsProvider";
 import { SprightProvider } from "./SprightProvider";
 import { Spright } from "./Spright";
@@ -159,6 +160,10 @@ export class ActiveDocument {
       await validator.buildOutput(this.spright, this.settings);
       this.updateDiagnostics(validator);
     }
+  }
+
+  async updateDocument(config: string) {
+    if (this.document) common.updateDocument(this.document, config);
   }
 
   async reveal(range?: vscode.Range) {

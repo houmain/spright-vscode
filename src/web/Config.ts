@@ -99,7 +99,7 @@ export class Config {
     for (let i = subject.lineNo + 1; i < this.lines.length; ++i) {
       const child = this.lines[i];
       if (child.level <= line.level) break;
-      if (child.definition == child.definition) return child;
+      if (child.definition == definition) return child;
     }
   }
 
@@ -140,7 +140,7 @@ export class Config {
   private getChildIndent(subject: Subject) {
     const line = this.lines[subject.lineNo];
     if (subject.lineNo < this.lines.length) {
-      const child = this.lines[subject.lineNo - 1];
+      const child = this.lines[subject.lineNo + 1];
       if (child.level > line.level) return getLineIndent(child);
     }
     return getLineIndent(line) + this.defaultIndent;
@@ -151,7 +151,6 @@ export class Config {
     definition: string,
     parameters: string
   ) {
-    const line = this.lines[subject.lineNo];
     const indent = this.getChildIndent(subject);
     const newLine = indent + definition + " " + parameters;
     this.lines.splice(subject.lineNo + 1, 0, {

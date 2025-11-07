@@ -85,6 +85,9 @@ export class EditorPanel {
         case "build":
           return this.activeDocument.buildOutput();
 
+        case "updateConfig":
+          return this.activeDocument.updateDocument(e.config);
+
         case "openDocument":
           return this.activeDocument.reveal();
 

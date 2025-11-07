@@ -17,19 +17,16 @@
     "url": "https://github.com/houmain/spright-vscode/issues"
   },
   "engines": {
-    "vscode": "^1.74.0"
+    "vscode": "^1.75.0"
   },
   "keywords": [
     "sprite", "sprite sheet", "atlas", "texture", "texture atlas", "texture packer"
   ],
   "categories": [
-    "Languages",
+    "Programming Languages",
     "Other"
   ],
   "icon": "media/icon.png",
-  "activationEvents": [
-    "onLanguage:spright"
-  ],
   "main": "./out/extension.js",
   "contributes": {
     "languages": [

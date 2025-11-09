@@ -39,10 +39,11 @@ function appendSelect(parent: HTMLElement, className: string, text: string) {
   return select;
 }
 
-function appendOption(select: HTMLSelectElement, value: string, text: string) {
+function appendOption(select: HTMLSelectElement, value: string, text: string, selected?: boolean) {
   const option = appendElement(select, "option", "zoom") as HTMLOptionElement;
   option.value = value;
   option.text = text;
+  if (selected) option.selected = selected;
   return option;
 }
 
@@ -66,16 +67,9 @@ function appendCheckbox(parent: HTMLElement, className: string, text: string) {
   return input;
 }
 
-function addClickHandler(element: HTMLElement, func: () => void) {
+function addClickHandler(element: HTMLElement, func: (event: MouseEvent) => void) {
   element.addEventListener("click", (ev: MouseEvent) => {
-    func();
-    ev.stopPropagation();
-  });
-}
-
-function addInputHandler(element: HTMLElement, func: () => void) {
-  element.addEventListener("input", (ev: Event) => {
-    func();
+    func(ev);
     ev.stopPropagation();
   });
 }
@@ -84,6 +78,13 @@ function addDoubleClickHandler(element: HTMLElement, func: () => void) {
   element.addEventListener("dblclick", (ev: MouseEvent) => {
     func();
     ev.stopPropagation();
+  });
+}
+
+function addChangeHandler(select: HTMLSelectElement, func: (value: string) => void) {
+  select.addEventListener("change", () => {
+    if (select.selectedIndex >= 0)
+      func(select.item(select.selectedIndex)!.value as string);
   });
 }
 
@@ -235,7 +236,10 @@ export class Editor {
     window.scrollTo(state.scrollX, state.scrollY);
   }
 
-  private refreshDescription() {
+  private refreshDescription(force?: boolean) {
+    if (force)
+      this.config.source = "";
+
     this.postMessage({
       type: "refreshDescription",
       describeOnlyInput: !(
@@ -279,8 +283,8 @@ export class Editor {
     this.zoom = appendSelect(itemsDiv, "zoom", "  Zoom:");
     for (const level of zoomLevels)
       appendOption(this.zoom, level.toString(), Math.round(level * 100) + "%");
-    this.zoom.addEventListener("change", () => {
-      this.options.zoomLevel = zoomLevels[this.zoom.selectedIndex];
+    addChangeHandler(this.zoom, (value: string) => {
+      this.options.zoomLevel = Number(value);
       this.onStateChanged();
       if (this.applyZoom) this.applyZoom();
     });
@@ -310,7 +314,7 @@ export class Editor {
     addClickHandler(showPivot, () => {
       this.options.showPivot = showPivot.checked;
       this.onStateChanged();
-      this.refreshDescription();
+      this.refreshDescription(true);
     });
 
     const showTrimmedRect = appendCheckbox(itemsDiv, "show-trimmed-rect", "trimmed-rect");
@@ -318,11 +322,12 @@ export class Editor {
     addClickHandler(showTrimmedRect, () => {
       this.options.showTrimmedRect = showTrimmedRect.checked;
       this.onStateChanged();
-      this.refreshDescription();
+      this.refreshDescription(true);
     });
 
     this.filter = appendTextbox(itemsDiv, "filter", "  Filter:");
-    addInputHandler(this.filter, () => { this.onFilterChanged(); });
+    this.filter.type = "search";
+    this.filter.addEventListener("input", () => { this.onFilterChanged(); });
     this.filter.value = this.options.filter || "";
 
     replaceOrAppendChild(this.toolbar, itemsDiv);
@@ -332,22 +337,73 @@ export class Editor {
     return (!this.options.filter || value.toLowerCase().includes(this.options.filter));
   }
 
-  private showInputProperties(inputDiv: HTMLElement, input: Input, configInput: ConfigInput) {
-    const properties = this.properties;
+  private getInputType(configInput: ConfigInput) {
+    for (const type of ["atlas", "grid", "grid-cells"])
+      if (this.config.getPropertyLine(configInput, type))
+        return type;
+    return "sprite";
+  }
 
-    const itemsDiv = appendElement(properties, "div", "items");
+  private replaceInputType(configInput: ConfigInput, newType: string) {
+    if (this.getInputType(configInput) == newType)
+      return;
+
+    this.config.setProperty(configInput, newType, "");
+    for (const type of ["atlas", "grid", "grid-cells"])
+      if (type != newType) this.config.removeProperty(configInput, type);
+
+    this.config.updateSource();
+    this.postMessage({
+      type: "updateConfig",
+      config: this.config.source,
+    });
+  }
+
+  public hideProperties() {
+    this.properties.style.visibility = "hidden";
+  }
+
+  private showProperties(event: MouseEvent) {
+    const offX = 20;
+    const offY = 10;
+    const width = this.properties.getBoundingClientRect().width;
+    const left = event.clientX + window.scrollX + (event.clientX + width > window.innerWidth ? -width - offX : offX);
+    const top = event.clientY + window.scrollY + offY;
+    this.properties.style.visibility = "visible";
+    this.properties.style.left = left + "px";
+    this.properties.style.top = top + "px";
+  }
+
+  private showInputProperties(event: MouseEvent, input: Input, configInput: ConfigInput) {
+    const itemsDiv = appendElement(this.properties, "div", "items");
     const typeSelect = appendSelect(itemsDiv, "type", "Type: ");
-    for (const type of ["sprite", "grid", "grid-cells", "atlas"])
-      appendOption(typeSelect, type, type);
-    replaceOrAppendChild(properties, itemsDiv);
+    const currentType = this.getInputType(configInput);
+    for (const type of ["sprite", "atlas", "grid", "grid-cells"])
+      appendOption(typeSelect, type, type, type == currentType);
+    addChangeHandler(typeSelect, (type: string) => {
+      this.replaceInputType(configInput, type);
+    });
 
-    const width = itemsDiv.getBoundingClientRect().width;
-    const bounds = inputDiv.getBoundingClientRect();
-    const left = bounds.left + (bounds.left > width + 20 ? -width - 5 : bounds.width + 5);
-    const top = bounds.top + 20;
-    properties.style.visibility = "visible";
-    properties.style.left = left + "px";
-    properties.style.top = top + "px";
+    appendElement(itemsDiv, "div", "dummy");
+    const autoButton = appendElement(itemsDiv, "button", "auto");
+    autoButton.innerText = "auto";
+    addClickHandler(autoButton, () => {
+      this.postMessage({
+        type: "autocomplete",
+        pattern: input.filename,
+      });
+    });
+
+    replaceOrAppendChild(this.properties, itemsDiv);
+    this.showProperties(event);
+  }
+
+  private showSpriteProperties(event: MouseEvent, configInput: ConfigInput) {
+    const properties = this.properties;
+    const itemsDiv = appendElement(properties, "div", "items");
+    appendCheckbox(itemsDiv, "some", "Option");
+    replaceOrAppendChild(properties, itemsDiv);
+    this.showProperties(event);
   }
 
   private rebuildView() {
@@ -369,29 +425,19 @@ export class Editor {
         continue;
 
       const inputDiv = appendElement(inputsDiv, "div", "input");
+
+      if (configInput)
+        addClickHandler(inputDiv, (event: MouseEvent) => {
+          this.showInputProperties(event, input, configInput);
+          this.postMessage({
+            type: "selectLine",
+            lineNo: configInput.lineNo,
+            columnNo: this.config.getParameterColumn(configInput),
+          });
+        });
+
       if (this.options.showInputTitle) {
         const titleDiv = appendElement(inputDiv, "div", "title");
-        if (configInput) {
-          addClickHandler(inputDiv, () => {
-            this.showInputProperties(inputDiv, input, configInput);
-          });
-          addDoubleClickHandler(inputDiv, () => {
-            this.postMessage({
-              type: "selectLine",
-              lineNo: configInput.lineNo,
-              columnNo: this.config.getParameterColumn(configInput),
-            });
-          });
-
-          const autoButton = appendElement(titleDiv, "button", "auto");
-          autoButton.innerText = "auto";
-          addClickHandler(autoButton, () => {
-            this.postMessage({
-              type: "autocomplete",
-              pattern: input.filename,
-            });
-          });
-        }
         const textDiv = appendElement(titleDiv, "div", "text");
         textDiv.innerText = input.filename;
       }
@@ -468,7 +514,8 @@ export class Editor {
         }
 
         if (configSprite)
-          addDoubleClickHandler(spriteDiv, () => {
+          addClickHandler(spriteDiv, (event: MouseEvent) => {
+            this.showSpriteProperties(event, configInput);
             this.postMessage({
               type: "selectLine",
               lineNo: configSprite.lineNo,

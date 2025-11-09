@@ -94,25 +94,35 @@ export class Config {
     this.source = this.lines.map((x) => x.line).join("\n");
   }
 
-  private findPropertyLineDirect(subject: Subject, definition: string) {
+  private findPropertyLineNo(subject: Subject, definition: string) {
     const line = this.lines[subject.lineNo];
     for (let i = subject.lineNo + 1; i < this.lines.length; ++i) {
       const child = this.lines[i];
       if (child.level <= line.level) break;
-      if (child.definition == definition) return child;
+      if (child.definition == definition) return i;
     }
   }
 
-  private findPropertyLineCommon(subject: Subject, definition: string) {
+  private findPropertyLine(subject: Subject, definition: string) {
+    const lineNo = this.findPropertyLineNo(subject, definition);
+    if (lineNo) return this.lines[lineNo];
+  }
+
+  private findCommonPropertyLineNo(subject: Subject, definition: string) {
     const line = this.lines[subject.lineNo];
     let belowLevel = line.level;
     for (let i = subject.lineNo - 1; i >= 0; --i) {
       const parent = this.lines[i];
       if (parent.level < belowLevel) {
-        if (parent.definition == definition) return parent;
+        if (parent.definition == definition) return i;
         belowLevel = parent.level + 1;
       }
     }
+  }
+
+  private findCommonPropertyLine(subject: Subject, definition: string) {
+    const lineNo = this.findCommonPropertyLineNo(subject, definition);
+    if (lineNo) return this.lines[lineNo];
   }
 
   public getSubjectParameters(subject: Subject) {
@@ -120,21 +130,26 @@ export class Config {
     return getLineParameters(line);
   }
 
-  public getProperty(subject: Subject, definition: string) {
-    const direct = this.findPropertyLineDirect(subject, definition);
-    if (direct) return getLineParameters(direct);
-    const common = this.findPropertyLineCommon(subject, definition);
-    if (common) return getLineParameters(common);
+  public getPropertyLine(subject: Subject, definition: string) {
+    const property = this.findPropertyLine(subject, definition);
+    if (property) return property;
+    const common = this.findCommonPropertyLine(subject, definition);
+    if (common) return property;
   }
 
-  public setPropertyDirect(
+  public getPropertyParameters(subject: Subject, definition: string) {
+    const line = this.getPropertyLine(subject, definition);
+    if (line) return getLineParameters(line);
+  }
+
+  public setProperty(
     subject: Subject,
     definition: string,
     parameters: string
   ) {
-    const line = this.findPropertyLineDirect(subject, definition);
+    const line = this.findPropertyLine(subject, definition);
     if (line) setLineParameters(line, parameters);
-    else this.insertPropertyDirect(subject, definition, parameters);
+    else this.insertProperty(subject, definition, parameters);
   }
 
   private getChildIndent(subject: Subject) {
@@ -146,7 +161,7 @@ export class Config {
     return getLineIndent(line) + this.defaultIndent;
   }
 
-  private insertPropertyDirect(
+  private insertProperty(
     subject: Subject,
     definition: string,
     parameters: string
@@ -159,6 +174,14 @@ export class Config {
       definition,
     });
     this.fixupLineNumbers(subject.lineNo, +1);
+  }
+
+  public removeProperty(subject: Subject, definition: string) {
+    const lineNo = this.findPropertyLineNo(subject, definition);
+    if (lineNo) {
+      this.lines.splice(lineNo, 1);
+      this.fixupLineNumbers(subject.lineNo, -1);
+    }
   }
 
   private fixupLineNumbers(start: number, delta: number) {

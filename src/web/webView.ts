@@ -15,12 +15,21 @@ declare const acquireVsCodeApi: any;
     (message: any) => vscode.postMessage(message)
   );
 
+  const hideProperties = () => { sprightEditor.hideProperties(); };
+  content.addEventListener("click", hideProperties);
+  toolbar.addEventListener("click", hideProperties);
+  window.addEventListener("resize", hideProperties);
+  window.addEventListener("contextmenu", hideProperties);
+
   window.addEventListener("message", (event) => {
     sprightEditor.onMessage(event.data);
   });
 
   window.addEventListener("keydown", (event) => {
-    if (event.ctrlKey && event.code === "KeyF") sprightEditor.focusFilter();
+    if (event.ctrlKey && event.code === "KeyF") {
+      hideProperties();
+      sprightEditor.focusFilter();
+    }
   });
 
   window.addEventListener("wheel", (event) => {
@@ -28,6 +37,7 @@ declare const acquireVsCodeApi: any;
   });
 
   window.addEventListener("scroll", (event) => {
+    sprightEditor.hideProperties();
     sprightEditor.onScrolled();
   });
 

@@ -19,7 +19,7 @@ function getHtmlForWebview(
   const nonce = utils.getNonce();
   return `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="en" data-vscode-context='{ "webviewSection": "html", "preventDefaultContextMenuItems": true }'>
     <head>
       <meta charset="UTF-8">
       <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
@@ -29,7 +29,7 @@ function getHtmlForWebview(
       <link href="${styleMainUri}" rel="stylesheet" />
       <title>Spright Configuration Editor</title>
     </head>
-    <body data-vscode-context='{ "webviewSection": "body", "preventDefaultContextMenuItems": true }'>
+    <body>
       <div id="toolbar" data-vscode-context='{ "webviewSection": "toolbar" }'></div>
       <div id="content" data-vscode-context='{ "webviewSection": "content" }'></div>
       <div id="properties" data-vscode-context='{ "webviewSection": "properties" }'></div>

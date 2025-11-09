@@ -1,8 +1,6 @@
-body {
-}
+body {}
 
-body.vscode-dark {
-}
+body.vscode-dark {}
 
 #toolbar {
   user-select: none;
@@ -10,13 +8,20 @@ body.vscode-dark {
   top: 0;
   margin: 0;
   z-index: 20;
-  padding: 4px;
   width: 100%;
   background: var(--vscode-titleBar-activeBackground);
+  border-bottom: 1px solid var(--vscode-editor-foreground);
 }
 
-#toolbar * {
+#toolbar .items {
+  padding-left: 4px;
+  padding-bottom: 4px;
+}
+
+#toolbar .items * {
+  vertical-align: middle;
   margin-right: 4px;
+  margin-top: 4px;
 }
 
 #toolbar input[type="text"] {
@@ -25,8 +30,34 @@ body.vscode-dark {
 }
 
 #toolbar input[type="checkbox"] {
-  vertical-align: middle;
   margin-left: 4px;
+}
+
+#properties {
+  visibility: hidden;
+  user-select: none;
+  position: absolute;
+  top: 100px;
+  left: 100px;
+  margin: 0;
+  z-index: 30;
+  border: 1px solid var(--vscode-editor-foreground);
+  background: var(--vscode-titleBar-activeBackground);
+  filter: drop-shadow(4px 4px 4px #00000099);
+}
+
+#properties .items {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  padding-left: 4px;
+  padding-bottom: 4px;
+}
+
+#properties .items * {
+  vertical-align: middle;
+  margin-right: 4px;
+  margin-top: 4px;
 }
 
 #content {
@@ -54,8 +85,7 @@ body.vscode-dark {
   padding: 3px;
 }
 
-.title {
-}
+.title {}
 
 .text {
   font-size: 1em;
@@ -130,6 +160,7 @@ body.vscode-dark .source .frame {
   width: calc(var(--rect_w) * var(--zoom));
   height: calc(var(--rect_h) * var(--zoom));
 }
+
 .pivot {
   position: absolute;
   margin: calc(var(--pivot-size) / -2);

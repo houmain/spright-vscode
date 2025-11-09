@@ -13,6 +13,14 @@ function appendElement(parent: HTMLElement, type: string, className: string) {
   return parent.appendChild(createElement(type, className));
 }
 
+function replaceOrAppendChild(parent: HTMLElement, child: HTMLElement) {
+  const prevChild = parent.getElementsByClassName(child.className).item(0);
+  if (prevChild)
+    parent.replaceChild(child, prevChild);
+  else
+    parent.appendChild(child);
+}
+
 function appendRect(parent: HTMLElement, rect: Rect, className: string) {
   const rectDiv = appendElement(parent, "div", className);
   rectDiv.style.setProperty("--rect_x", rect.x + "px");
@@ -23,7 +31,7 @@ function appendRect(parent: HTMLElement, rect: Rect, className: string) {
 }
 
 function appendSelect(parent: HTMLElement, className: string, text: string) {
- const label = appendElement(parent, "label", className) as HTMLLabelElement;
+  const label = appendElement(parent, "label", className) as HTMLLabelElement;
   label.textContent = text;
   const select = appendElement(parent, "select", className) as HTMLSelectElement;
   select.id = "select-" + className;
@@ -39,7 +47,7 @@ function appendOption(select: HTMLSelectElement, value: string, text: string) {
 }
 
 function appendTextbox(parent: HTMLElement, className: string, text: string) {
- const label = appendElement(parent, "label", className) as HTMLLabelElement;
+  const label = appendElement(parent, "label", className) as HTMLLabelElement;
   label.textContent = text;
   const input = appendElement(parent, "input", className) as HTMLInputElement;
   input.id = "text-" + className;
@@ -122,6 +130,7 @@ export class Editor {
   constructor(
     private toolbar: HTMLElement,
     private content: HTMLElement,
+    private properties: HTMLElement,
     private updateState: any,
     private postMessage: any
   ) {
@@ -169,6 +178,9 @@ export class Editor {
   }
 
   setConfig(config: string, description: any) {
+    if (config === this.config.source)
+      return;
+
     const begin = Date.now();
     try {
       this.config = new Config(config);
@@ -311,19 +323,34 @@ export class Editor {
     addInputHandler(this.filter, () => { this.onFilterChanged(); });
     this.filter.value = this.options.filter || "";
 
-    if (!this.toolbar.firstChild)
-      appendElement(this.toolbar, 'div', '');
-    this.toolbar.replaceChild(itemsDiv, this.toolbar.firstChild!);
+    replaceOrAppendChild(this.toolbar, itemsDiv);
   }
 
   private matchesFilter(value: string) {
     return (!this.options.filter || value.toLowerCase().includes(this.options.filter));
   }
 
+  private showInputProperties(inputDiv: HTMLElement, input: Input, configInput: ConfigInput) {
+    const properties = this.properties;
+
+    const itemsDiv = appendElement(properties, "div", "items");
+    const typeSelect = appendSelect(itemsDiv, "type", "Type: ");
+    for (const type of ["sprite", "grid", "grid-cells", "atlas"])
+      appendOption(typeSelect, type, type);
+    replaceOrAppendChild(properties, itemsDiv);
+
+    const width = itemsDiv.getBoundingClientRect().width;
+    const bounds = inputDiv.getBoundingClientRect();
+    const left = bounds.left + (bounds.left > width + 20 ? -width - 5 : bounds.width + 5);
+    const top = bounds.top + 20;
+    properties.style.visibility = "visible";
+    properties.style.left = left + "px";
+    properties.style.top = top + "px";
+  }
+
   private rebuildView() {
     const begin = Date.now();
     const inputsDiv = createElement("div", "inputs");
-
     this.applyZoom = () => {
       inputsDiv.style.setProperty("--zoom", this.options.zoomLevel.toString());
     };
@@ -343,6 +370,9 @@ export class Editor {
       if (this.options.showInputTitle) {
         const titleDiv = appendElement(inputDiv, "div", "title");
         if (configInput) {
+          addClickHandler(inputDiv, () => {
+            this.showInputProperties(inputDiv, input, configInput);
+          });
           addDoubleClickHandler(inputDiv, () => {
             this.postMessage({
               type: "selectLine",
@@ -376,18 +406,12 @@ export class Editor {
     this.cachedElements = this.cachedElementsNew;
     this.cachedElementsNew = new Map();
 
-    const prevInputsDiv = this.content.getElementsByClassName("inputs").item(0);
-    if (prevInputsDiv) {
-      this.content.replaceChild(inputsDiv, prevInputsDiv);
-    }
-    else {
-      this.content.appendChild(inputsDiv);
-    }
+    replaceOrAppendChild(this.content, inputsDiv);
     const duration = (Date.now() - begin) / 1000.0;
     console.log("Rebuilding view took", duration, "seconds");
   }
 
-  private createSourceDiv(input: Input, configInput?: ConfigInput) : HTMLElement {
+  private createSourceDiv(input: Input, configInput?: ConfigInput): HTMLElement {
     let spriteIndex = 0;
     const sourcesDiv = createElement("div", "sources");
     for (const sourceSprites of input.sourceSprites) {
@@ -406,7 +430,7 @@ export class Editor {
       sourceFrameDiv.appendChild(sourceImageDiv);
       sourceImageDiv.style.setProperty("--width", source.width + "px");
       sourceImageDiv.style.setProperty("--height", source.height + "px");
-      
+
       const spritesDiv = appendElement(sourceFrameDiv, "div", "sprites");
       for (const index of sourceSprites.spriteIndices) {
         const sprite = this.description.sprites[index];

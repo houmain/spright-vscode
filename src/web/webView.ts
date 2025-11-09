@@ -6,9 +6,11 @@ declare const acquireVsCodeApi: any;
   const vscode = acquireVsCodeApi();
   const toolbar = document.querySelector("#toolbar") as HTMLElement;
   const content = document.querySelector("#content") as HTMLElement;
+  const properties = document.querySelector("#properties") as HTMLElement;
   const sprightEditor = new Editor(
     toolbar,
     content,
+    properties,
     (state: any) => vscode.setState(state),
     (message: any) => vscode.postMessage(message)
   );

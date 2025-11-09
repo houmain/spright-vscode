@@ -147,6 +147,8 @@ export class Editor {
       this.postMessage({ type: "openDocument" });
     });
     this.rebuildToolbar();
+
+    this.postMessage({ type: "initialized" });
   }
 
   updateZoomSelection() {

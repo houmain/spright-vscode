@@ -76,6 +76,9 @@ export class EditorPanel {
 
     this.webviewPanel.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
+        case "initialized":
+          return this.onWebviewInitialized();
+
         case "refreshDescription":
           this.activeDocument.describeOnlyInput = e.describeOnlyInput;
           return this.activeDocument.validate();
@@ -98,7 +101,9 @@ export class EditorPanel {
           );
       }
     });
+  }
 
+  onWebviewInitialized() {
     const activeDocumentChangedSubscription = this.activeDocument.onChanged(
       this.onActiveDocumentChanged.bind(this)
     );

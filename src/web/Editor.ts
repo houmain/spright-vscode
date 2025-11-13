@@ -1,5 +1,5 @@
-import { Config, Input as ConfigInput } from "./Config";
-import { Description, Input, Rect } from "./Description";
+import { Config, Input as ConfigInput, Sprite as ConfigSprite } from "./Config";
+import { Description, Input, Rect, Sprite } from "./Description";
 
 const zoomLevels = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 8, 10];
 
@@ -363,7 +363,7 @@ export class Editor {
     this.properties.style.visibility = "hidden";
   }
 
-  private showProperties(event: MouseEvent) {
+  private showProperties(event: MouseEvent, title: string) {
     const offX = 20;
     const offY = 10;
     const width = this.properties.getBoundingClientRect().width;
@@ -372,10 +372,16 @@ export class Editor {
     this.properties.style.visibility = "visible";
     this.properties.style.left = left + "px";
     this.properties.style.top = top + "px";
+
+    const titleLabel = createElement("label", "title");
+    titleLabel.textContent = title;
+    replaceOrAppendChild(this.properties, titleLabel);
   }
 
   private showInputProperties(event: MouseEvent, input: Input, configInput: ConfigInput) {
-    const itemsDiv = appendElement(this.properties, "div", "items");
+    this.showProperties(event, "Input");
+
+    const itemsDiv = createElement("div", "items");
     const typeSelect = appendSelect(itemsDiv, "type", "Type: ");
     const currentType = this.getInputType(configInput);
     for (const type of ["sprite", "atlas", "grid", "grid-cells"])
@@ -395,15 +401,13 @@ export class Editor {
     });
 
     replaceOrAppendChild(this.properties, itemsDiv);
-    this.showProperties(event);
   }
 
-  private showSpriteProperties(event: MouseEvent, configInput: ConfigInput) {
-    const properties = this.properties;
-    const itemsDiv = appendElement(properties, "div", "items");
+  private showSpriteProperties(event: MouseEvent, sprite: Sprite, configSprite: ConfigSprite) {
+    this.showProperties(event, "Sprite");
+    const itemsDiv = createElement("div", "items");
     appendCheckbox(itemsDiv, "some", "Option");
-    replaceOrAppendChild(properties, itemsDiv);
-    this.showProperties(event);
+    replaceOrAppendChild(this.properties, itemsDiv);
   }
 
   private rebuildView() {
@@ -515,7 +519,7 @@ export class Editor {
 
         if (configSprite)
           addClickHandler(spriteDiv, (event: MouseEvent) => {
-            this.showSpriteProperties(event, configInput);
+            this.showSpriteProperties(event, sprite, configSprite);
             this.postMessage({
               type: "selectLine",
               lineNo: configSprite.lineNo,

@@ -33,6 +33,12 @@ body.vscode-dark {}
   margin-left: 4px;
 }
 
+input,
+select,
+button {
+  filter: drop-shadow(0px 0px 3px #00000033);
+}
+
 #properties {
   visibility: hidden;
   user-select: none;
@@ -63,10 +69,18 @@ body.vscode-dark {}
   padding-bottom: 4px;
 }
 
-#properties .items * {
+#properties .items>* {
   vertical-align: middle;
   margin-right: 4px;
   margin-top: 4px;
+}
+
+#properties input[type="number"] {
+  max-width: 60px;
+}
+
+#properties .point-y {
+  margin-left: 6px;
 }
 
 #content {

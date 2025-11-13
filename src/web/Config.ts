@@ -94,6 +94,11 @@ export class Config {
     this.source = this.lines.map((x) => x.line).join("\n");
   }
 
+  public getSubjectParameters(subject: Subject) {
+    const line = this.lines[subject.lineNo];
+    return getLineParameters(line);
+  }
+
   private findPropertyLineNo(subject: Subject, definition: string) {
     const line = this.lines[subject.lineNo];
     for (let i = subject.lineNo + 1; i < this.lines.length; ++i) {
@@ -106,6 +111,11 @@ export class Config {
   private findPropertyLine(subject: Subject, definition: string) {
     const lineNo = this.findPropertyLineNo(subject, definition);
     if (lineNo) return this.lines[lineNo];
+  }
+
+  public getPropertyParameters(subject: Subject, definition: string) {
+    const line = this.findPropertyLine(subject, definition);
+    if (line) return getLineParameters(line);
   }
 
   private findCommonPropertyLineNo(subject: Subject, definition: string) {
@@ -125,20 +135,8 @@ export class Config {
     if (lineNo) return this.lines[lineNo];
   }
 
-  public getSubjectParameters(subject: Subject) {
-    const line = this.lines[subject.lineNo];
-    return getLineParameters(line);
-  }
-
-  public getPropertyLine(subject: Subject, definition: string) {
-    const property = this.findPropertyLine(subject, definition);
-    if (property) return property;
-    const common = this.findCommonPropertyLine(subject, definition);
-    if (common) return property;
-  }
-
-  public getPropertyParameters(subject: Subject, definition: string) {
-    const line = this.getPropertyLine(subject, definition);
+  public getCommonPropertyParameters(subject: Subject, definition: string) {
+    const line = this.findCommonPropertyLine(subject, definition);
     if (line) return getLineParameters(line);
   }
 
@@ -180,7 +178,7 @@ export class Config {
     const lineNo = this.findPropertyLineNo(subject, definition);
     if (lineNo) {
       this.lines.splice(lineNo, 1);
-      this.fixupLineNumbers(subject.lineNo, -1);
+      this.fixupLineNumbers(lineNo, -1);
     }
   }
 
@@ -191,14 +189,6 @@ export class Config {
         if (sprite.lineNo > start) sprite.lineNo += delta;
       }
     }
-  }
-
-  public getSpriteId(sprite: Sprite) {
-    const id = this.getSubjectParameters(sprite);
-    if (id.length > 0) return id;
-    const id2 = this.getProperty(sprite, "id");
-    if (id2) return id2;
-    return "sprite";
   }
 
   public getParameterColumn(item: Subject) {

@@ -47,6 +47,26 @@ function appendOption(select: HTMLSelectElement, value: string, text: string, se
   return option;
 }
 
+function appendSpinbox(parent: HTMLElement, className: string, text: string) {
+  const label = appendElement(parent, "label", className) as HTMLLabelElement;
+  label.textContent = text;
+  const input = appendElement(parent, "input", className) as HTMLInputElement;
+  input.id = "number-" + className;
+  input.type = "number";
+  label.htmlFor = input.id;
+  return input;
+}
+
+function appendPointEditor(parent: HTMLElement, className: string, text: string) {
+  const label = appendElement(parent, "label", className) as HTMLLabelElement;
+  label.textContent = text + " X";
+  const input = appendElement(parent, "span", className);
+  const inputX = appendSpinbox(input, "point-x", "");
+  appendSpinbox(input, "point-y", "Y");
+  label.htmlFor = inputX.id;
+  return input;
+}
+
 function appendTextbox(parent: HTMLElement, className: string, text: string) {
   const label = appendElement(parent, "label", className) as HTMLLabelElement;
   label.textContent = text;
@@ -57,13 +77,15 @@ function appendTextbox(parent: HTMLElement, className: string, text: string) {
   return input;
 }
 
-function appendCheckbox(parent: HTMLElement, className: string, text: string) {
-  const input = appendElement(parent, "input", className) as HTMLInputElement;
+function appendCheckbox(parent: HTMLElement, className: string, text: string, labelFirst?: boolean) {
+  const input = createElement("input", className) as HTMLInputElement;
   input.id = "checkbox-" + className;
   input.type = "checkbox";
-  const label = appendElement(parent, "label", className) as HTMLLabelElement;
+  const label = createElement("label", className) as HTMLLabelElement;
   label.htmlFor = input.id;
   label.textContent = text;
+  if (labelFirst) { parent.appendChild(label); parent.appendChild(input); }
+  else { parent.appendChild(input); parent.appendChild(label); }
   return input;
 }
 
@@ -178,6 +200,19 @@ export class Editor {
         this.setConfig(message.config, message.description);
         return;
     }
+  }
+
+  private async updateConfig(forceRefresh?: boolean) {
+    this.config.updateSource();
+
+    const result = this.postMessage({
+      type: "updateConfig",
+      config: this.config.source,
+    });
+    if (forceRefresh)
+      this.config.source = "";
+
+    return result;
   }
 
   setConfig(config: string, description: any) {
@@ -338,25 +373,31 @@ export class Editor {
   }
 
   private getInputType(configInput: ConfigInput) {
-    for (const type of ["atlas", "grid", "grid-cells"])
-      if (this.config.getPropertyLine(configInput, type))
+    const types = ["atlas", "grid", "grid-cells"];
+    for (const type of types)
+      if (this.config.getPropertyParameters(configInput, type) !== undefined)
+        return type;
+    for (const type of types)
+      if (this.config.getCommonPropertyParameters(configInput, type) !== undefined)
         return type;
     return "sprite";
   }
 
-  private replaceInputType(configInput: ConfigInput, newType: string) {
-    if (this.getInputType(configInput) == newType)
+  private async replaceInputType(configInput: ConfigInput, newType: string) {
+    const type = this.getInputType(configInput);
+    if (type == newType)
       return;
 
-    this.config.setProperty(configInput, newType, "");
-    for (const type of ["atlas", "grid", "grid-cells"])
-      if (type != newType) this.config.removeProperty(configInput, type);
+    if (newType !== "sprite") {
+      let parameters = "";
+      if (newType == "grid" || newType == "grid-cells")
+        parameters = "16 16";
+      this.config.setProperty(configInput, newType, parameters);
+    }
+    if (type !== "sprite")
+      this.config.removeProperty(configInput, type);
 
-    this.config.updateSource();
-    this.postMessage({
-      type: "updateConfig",
-      config: this.config.source,
-    });
+    return this.updateConfig(true);
   }
 
   public hideProperties() {
@@ -378,35 +419,62 @@ export class Editor {
     replaceOrAppendChild(this.properties, titleLabel);
   }
 
-  private showInputProperties(event: MouseEvent, input: Input, configInput: ConfigInput) {
-    this.showProperties(event, "Input");
-
+  private rebuildInputProperties(input: Input, configInput: ConfigInput) {
+    const currentInputType = this.getInputType(configInput);
     const itemsDiv = createElement("div", "items");
-    const typeSelect = appendSelect(itemsDiv, "type", "Type: ");
-    const currentType = this.getInputType(configInput);
-    for (const type of ["sprite", "atlas", "grid", "grid-cells"])
-      appendOption(typeSelect, type, type, type == currentType);
-    addChangeHandler(typeSelect, (type: string) => {
-      this.replaceInputType(configInput, type);
+    const typeSelect = appendSelect(itemsDiv, "type", "Type");
+    const types = [
+      ["sprite", "Single Sprite"],
+      ["atlas", "Atlas"],
+      ["grid", "Grid (Cell Size)"],
+      ["grid-cells", "Grid (Cell Count)"]
+    ];
+    for (const type of types)
+      appendOption(typeSelect, type[0], type[1], type[0] == currentInputType);
+
+    addChangeHandler(typeSelect, async (type: string) => {
+      await this.replaceInputType(configInput, type);
+      this.rebuildInputProperties(input, configInput);
     });
 
-    appendElement(itemsDiv, "div", "dummy");
-    const autoButton = appendElement(itemsDiv, "button", "auto");
-    autoButton.innerText = "auto";
-    addClickHandler(autoButton, () => {
-      this.postMessage({
-        type: "autocomplete",
-        pattern: input.filename,
+    if (currentInputType === "grid") {
+      appendPointEditor(itemsDiv, "grid-size", "Cell Size");
+      appendPointEditor(itemsDiv, "grid-offset", "Offset");
+      appendPointEditor(itemsDiv, "grid-spacing", "Spacing");
+    }
+    else if (currentInputType === "grid-cells") {
+      appendPointEditor(itemsDiv, "cell-count", "Cell Count");
+    }
+
+    if (currentInputType !== "sprite") {
+      appendSpinbox(itemsDiv, "max-sprites", "Max. Sprites");
+      appendElement(itemsDiv, "div", "dummy");
+
+      const autoButton = appendElement(itemsDiv, "button", "auto");
+      autoButton.innerText = "auto";
+      addClickHandler(autoButton, () => {
+        this.postMessage({
+          type: "autocomplete",
+          pattern: input.filename,
+        });
       });
-    });
-
+    }
     replaceOrAppendChild(this.properties, itemsDiv);
   }
 
-  private showSpriteProperties(event: MouseEvent, sprite: Sprite, configSprite: ConfigSprite) {
-    this.showProperties(event, "Sprite");
+  private rebuildSpriteProperties(sprite: Sprite, configSprite: ConfigSprite, configInput: ConfigInput) {
+    const currentInputType = this.getInputType(configInput);
     const itemsDiv = createElement("div", "items");
-    appendCheckbox(itemsDiv, "some", "Option");
+
+    appendTextbox(itemsDiv, "sprite-id", "ID").value = this.config.getSubjectParameters(configSprite);
+    if (currentInputType == "grid") {
+      appendPointEditor(itemsDiv, "sprite-span", "Span");
+    }
+    else if (currentInputType == "atlas") {
+      appendPointEditor(itemsDiv, "sprite-position", "Position");
+      appendPointEditor(itemsDiv, "sprite-size", "Size");
+    }
+    appendPointEditor(itemsDiv, "sprite-pivot", "Pivot");
     replaceOrAppendChild(this.properties, itemsDiv);
   }
 
@@ -432,7 +500,8 @@ export class Editor {
 
       if (configInput)
         addClickHandler(inputDiv, (event: MouseEvent) => {
-          this.showInputProperties(event, input, configInput);
+          this.showProperties(event, "Input");
+          this.rebuildInputProperties(input, configInput);
           this.postMessage({
             type: "selectLine",
             lineNo: configInput.lineNo,
@@ -519,7 +588,8 @@ export class Editor {
 
         if (configSprite)
           addClickHandler(spriteDiv, (event: MouseEvent) => {
-            this.showSpriteProperties(event, sprite, configSprite);
+            this.showProperties(event, "Sprite");
+            this.rebuildSpriteProperties(sprite, configSprite, configInput);
             this.postMessage({
               type: "selectLine",
               lineNo: configSprite.lineNo,

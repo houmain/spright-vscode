@@ -99,6 +99,11 @@ export class Config {
     return getLineParameters(line);
   }
 
+  public setSubjectParameters(subject: Subject, parameters: string) {
+    const line = this.lines[subject.lineNo];
+    return setLineParameters(line, parameters);
+  }
+
   private findPropertyLineNo(subject: Subject, definition: string) {
     const line = this.lines[subject.lineNo];
     for (let i = subject.lineNo + 1; i < this.lines.length; ++i) {

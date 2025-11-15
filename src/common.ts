@@ -37,13 +37,13 @@ export async function updateDocument(document: vscode.TextDocument, config: stri
 
   const prependNewline =
     !current.endsWith(lineSeparator) && range.first == currentLines.length;
-  const appendNewline = range.last != currentLines.length;
+  const appendNewline = range.last != currentLines.length && range.diff.length > 0;
   edit.replace(
     document.uri,
     new vscode.Range(range.first, 0, range.last, 0),
     (prependNewline ? lineSeparator : "") +
-      range.diff.join(lineSeparator) +
-      (appendNewline ? lineSeparator : "")
+    range.diff.join(lineSeparator) +
+    (appendNewline ? lineSeparator : "")
   );
   return vscode.workspace.applyEdit(edit);
 }

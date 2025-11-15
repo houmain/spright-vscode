@@ -3,6 +3,22 @@ import { Description, Input, Rect, Sprite } from "./Description";
 
 const zoomLevels = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 8, 10];
 
+function stripQuotes(text: string) {
+  if (text.length > 1 && (text[0] == '"' || text[0] == "'") && text[0] == text[text.length - 1])
+    return text.substring(1, text.length - 1);
+  return text;
+}
+
+function conditionallyQuote(text: string) {
+  for (const c of [' ', '"', "'"])
+    if (text.indexOf(c) != -1) {
+      if (text.indexOf('"') != -1)
+        return `'${text}'`;
+      return `"${text}"`;
+    }
+  return text;
+}
+
 function createElement(type: string, className: string) {
   const element = document.createElement(type);
   element.className = className;
@@ -30,6 +46,43 @@ function appendRect(parent: HTMLElement, rect: Rect, className: string) {
   return rectDiv;
 }
 
+class NumberEditor {
+  constructor(public input: HTMLInputElement) { }
+
+  setValue(value: any) {
+    this.input.value = value?.toString();
+    return this;
+  }
+  setMin(min: any) {
+    this.input.min = min?.toString();
+    return this;
+  }
+  setMax(max: any) {
+    this.input.max = max?.toString();
+    return this;
+  }
+}
+
+class PointEditor {
+  constructor(public inputX: HTMLInputElement, public inputY: HTMLInputElement) { }
+
+  setValue(valueX: any, valueY: any) {
+    this.inputX.value = valueX?.toString();
+    this.inputY.value = valueY?.toString();
+    return this;
+  }
+  setMin(min: any) {
+    this.inputX.min = min?.toString();
+    this.inputY.min = min?.toString();
+    return this;
+  }
+  setMax(max: any) {
+    this.inputX.max = max?.toString();
+    this.inputY.max = max?.toString();
+    return this;
+  }
+}
+
 function appendSelect(parent: HTMLElement, className: string, text: string) {
   const label = appendElement(parent, "label", className) as HTMLLabelElement;
   label.textContent = text;
@@ -54,7 +107,7 @@ function appendSpinbox(parent: HTMLElement, className: string, text: string) {
   input.id = "number-" + className;
   input.type = "number";
   label.htmlFor = input.id;
-  return input;
+  return new NumberEditor(input);
 }
 
 function appendPointEditor(parent: HTMLElement, className: string, text: string) {
@@ -62,9 +115,9 @@ function appendPointEditor(parent: HTMLElement, className: string, text: string)
   label.textContent = text + " X";
   const input = appendElement(parent, "span", className);
   const inputX = appendSpinbox(input, "point-x", "");
-  appendSpinbox(input, "point-y", "Y");
-  label.htmlFor = inputX.id;
-  return input;
+  const inputY = appendSpinbox(input, "point-y", "Y");
+  label.htmlFor = inputX.input.id;
+  return new PointEditor(inputX.input, inputY.input);
 }
 
 function appendTextbox(parent: HTMLElement, className: string, text: string) {
@@ -388,15 +441,20 @@ export class Editor {
     if (type == newType)
       return;
 
-    if (newType !== "sprite") {
+    if (newType !== "sprite" || configInput.sprites.length == 0) {
       let parameters = "";
       if (newType == "grid" || newType == "grid-cells")
         parameters = "16 16";
       this.config.setProperty(configInput, newType, parameters);
     }
-    if (type !== "sprite")
+    if (type !== "sprite" || configInput.sprites.length == 1)
       this.config.removeProperty(configInput, type);
 
+    return this.updateConfig(true);
+  }
+
+  private async replaceSpriteId(configSprite: ConfigSprite, id: string) {
+    this.config.setSubjectParameters(configSprite, id);
     return this.updateConfig(true);
   }
 
@@ -426,8 +484,8 @@ export class Editor {
     const types = [
       ["sprite", "Single Sprite"],
       ["atlas", "Atlas"],
-      ["grid", "Grid (Cell Size)"],
-      ["grid-cells", "Grid (Cell Count)"]
+      ["grid", "Grid (Cell-Size)"],
+      ["grid-cells", "Grid (Cell-Count)"]
     ];
     for (const type of types)
       appendOption(typeSelect, type[0], type[1], type[0] == currentInputType);
@@ -438,16 +496,17 @@ export class Editor {
     });
 
     if (currentInputType === "grid") {
-      appendPointEditor(itemsDiv, "grid-size", "Cell Size");
-      appendPointEditor(itemsDiv, "grid-offset", "Offset");
-      appendPointEditor(itemsDiv, "grid-spacing", "Spacing");
+      const gridSize = this.config.getPropertyParameters(configInput, "grid");
+      appendPointEditor(itemsDiv, "cell-size", "Cell-Size").setMin(1).setValue(gridSize, gridSize);
+      appendPointEditor(itemsDiv, "grid-offset", "Grid-Offset").setMin(0);
+      appendPointEditor(itemsDiv, "grid-spacing", "Grid-Spacing").setMin(0);
     }
     else if (currentInputType === "grid-cells") {
-      appendPointEditor(itemsDiv, "cell-count", "Cell Count");
+      appendPointEditor(itemsDiv, "cell-count", "Cell-Count").setMin(1);
     }
 
     if (currentInputType !== "sprite") {
-      appendSpinbox(itemsDiv, "max-sprites", "Max. Sprites");
+      appendSpinbox(itemsDiv, "max-sprites", "Max. Sprites").setMin(0);
       appendElement(itemsDiv, "div", "dummy");
 
       const autoButton = appendElement(itemsDiv, "button", "auto");
@@ -466,15 +525,24 @@ export class Editor {
     const currentInputType = this.getInputType(configInput);
     const itemsDiv = createElement("div", "items");
 
-    appendTextbox(itemsDiv, "sprite-id", "ID").value = this.config.getSubjectParameters(configSprite);
+    const idInput = appendTextbox(itemsDiv, "sprite-id", "ID");
+    idInput.value = stripQuotes(this.config.getSubjectParameters(configSprite));
+    idInput.addEventListener("input", () => { this.replaceSpriteId(configSprite, conditionallyQuote(idInput.value)); });
+
     if (currentInputType == "grid") {
-      appendPointEditor(itemsDiv, "sprite-span", "Span");
+      appendPointEditor(itemsDiv, "sprite-span", "Cell-Span").setMin(0);
     }
     else if (currentInputType == "atlas") {
-      appendPointEditor(itemsDiv, "sprite-position", "Position");
-      appendPointEditor(itemsDiv, "sprite-size", "Size");
+      const x = sprite.sourceRect.x;
+      const y = sprite.sourceRect.y;
+      const w = sprite.sourceRect.w;
+      const h = sprite.sourceRect.h;
+      appendPointEditor(itemsDiv, "sprite-position", "Position").setMin(0).setValue(x, y);
+      appendPointEditor(itemsDiv, "sprite-size", "Size").setMin(1).setValue(w, h);
     }
-    appendPointEditor(itemsDiv, "sprite-pivot", "Pivot");
+    const px = sprite.pivot?.x;
+    const py = sprite.pivot?.y;
+    appendPointEditor(itemsDiv, "sprite-pivot", "Pivot").setValue(px, py);
     replaceOrAppendChild(this.properties, itemsDiv);
   }
 

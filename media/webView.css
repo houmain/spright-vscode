@@ -70,9 +70,12 @@ button {
 }
 
 #properties .items>* {
-  vertical-align: middle;
   margin-right: 4px;
   margin-top: 4px;
+}
+
+#properties label {
+  justify-self: end;
 }
 
 #properties input[type="number"] {

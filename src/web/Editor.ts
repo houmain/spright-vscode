@@ -9,6 +9,7 @@ type Options = {
   zoomLevel: number;
   filter?: string;
   showId: boolean;
+  showRect: boolean;
   showPivot: boolean;
   showTrimmedRect: boolean;
   showInputTitle: boolean;
@@ -22,11 +23,14 @@ type State = {
   scrollY: number;
 };
 
+function isSequenceFilename(filename: string) {
+  return filename.indexOf('{') != -1;
+}
+
 export class Editor {
   private config: Config;
   private description: Description;
   private options: Options;
-  private applyZoom?: () => void;
   private filter!: HTMLInputElement;
   private zoom!: HTMLSelectElement;
   private cachedElements: Map<any, HTMLElement> = new Map();
@@ -45,20 +49,28 @@ export class Editor {
     this.description = {} as Description;
     this.options = {
       showId: true,
+      showRect: true,
       showInputTitle: true,
       zoomLevel: 2,
     } as Options;
 
     const html = this.content.parentElement!.parentElement!;
     utils.addDoubleClickHandler(html, () => {
+      this.hideProperties();
       this.postMessage({ type: "openDocument" });
     });
     this.rebuildToolbar();
 
+    this.properties.addEventListener("click", (e: MouseEvent) => { e.stopPropagation(); });
+    this.properties.addEventListener("dblclick", (e: MouseEvent) => { e.stopPropagation(); });
+    this.properties.addEventListener("wheel", (e: WheelEvent) => { e.stopPropagation(); });
+
     this.postMessage({ type: "initialized" });
   }
 
-  public updateZoomSelection() {
+  private applyZoom() {
+    this.hideProperties();
+    this.content.style.setProperty("--zoom", this.options.zoomLevel.toString());
     this.zoom.selectedIndex = zoomLevels.indexOf(this.options.zoomLevel);
   }
 
@@ -73,8 +85,7 @@ export class Editor {
     if (n > 0 && direction == -1) --n;
     if (n < zoomLevels.length - 1 && direction == 1) ++n;
     this.options.zoomLevel = zoomLevels[n];
-    if (this.applyZoom) this.applyZoom();
-    this.updateZoomSelection();
+    this.applyZoom();
     this.onStateChanged();
   }
 
@@ -122,6 +133,9 @@ export class Editor {
   }
 
   public onStateChanged() {
+    this.content.style.setProperty("--sprite-rect-color",
+      this.options.showRect ? "red" : "transparent");
+
     this.updateState({
       config: this.config.source,
       description: this.description,
@@ -139,17 +153,18 @@ export class Editor {
   public onFilterChanged() {
     if (this.onFilterChangedTimeout) window.clearTimeout(this.onFilterChangedTimeout);
     this.onFilterChangedTimeout = window.setTimeout(() => {
-      this.options.filter = (this.filter.value === "" ?
-        undefined : this.filter.value.toLocaleLowerCase());
+      const value = this.filter.value.toLocaleLowerCase().trim();
+      this.options.filter = (value === "" ? undefined : value);
       this.onStateChanged();
       this.rebuildView();
-    }, 500);
+    }, 200);
   }
 
   public restoreState(state: State) {
     this.config = new Config(state.config);
     this.description = state.description;
     this.options = state.options;
+    this.applyZoom();
     this.rebuildToolbar();
     this.rebuildView();
     window.scrollTo(state.scrollX, state.scrollY);
@@ -204,10 +219,10 @@ export class Editor {
       utils.appendOption(this.zoom, level.toString(), Math.round(level * 100) + "%");
     utils.addChangeHandler(this.zoom, (value: string) => {
       this.options.zoomLevel = Number(value);
+      this.applyZoom();
       this.onStateChanged();
-      if (this.applyZoom) this.applyZoom();
     });
-    this.updateZoomSelection();
+    this.applyZoom();
 
     const showLabel = utils.appendElement(itemsDiv, "label", "show-label");
     showLabel.innerText = "  Show:";
@@ -226,6 +241,13 @@ export class Editor {
       this.options.showId = showId.checked;
       this.onStateChanged();
       this.rebuildView();
+    });
+
+    const showRect = utils.appendCheckbox(itemsDiv, "show-rect", "rect");
+    showRect.checked = this.options.showRect;
+    utils.addClickHandler(showRect, () => {
+      this.options.showRect = showRect.checked;
+      this.onStateChanged();
     });
 
     const showPivot = utils.appendCheckbox(itemsDiv, "show-pivot", "pivot");
@@ -296,7 +318,7 @@ export class Editor {
 
     if (currentInputType === "grid") {
       const gridSize = this.config.getPropertyParameters(configInput, "grid");
-      utils.appendPointEditor(itemsDiv, "cell-size", "Cell-Size").setMin(1).setValue(gridSize, gridSize);
+      utils.appendPointEditor(itemsDiv, "cell-size", "Cell-Size").setMin(1).setValue(gridSize?.at(0), gridSize?.at(1));
       utils.appendPointEditor(itemsDiv, "grid-offset", "Grid-Offset").setMin(0);
       utils.appendPointEditor(itemsDiv, "grid-spacing", "Grid-Spacing").setMin(0);
     }
@@ -304,10 +326,11 @@ export class Editor {
       utils.appendPointEditor(itemsDiv, "cell-count", "Cell-Count").setMin(1);
     }
 
-    if (currentInputType !== "sprite") {
+    if (currentInputType !== "sprite")
       utils.appendSpinbox(itemsDiv, "max-sprites", "Max. Sprites").setMin(0);
-      utils.appendElement(itemsDiv, "div", "dummy");
 
+    if (currentInputType !== "sprite" || isSequenceFilename(input.filename)) {
+      utils.appendElement(itemsDiv, "div", "dummy");
       const autoButton = utils.appendElement(itemsDiv, "button", "auto");
       autoButton.innerText = "auto";
       utils.addClickHandler(autoButton, () => {
@@ -325,10 +348,10 @@ export class Editor {
     const itemsDiv = utils.createElement("div", "items");
 
     const idInput = utils.appendTextbox(itemsDiv, "sprite-id", "ID");
-    idInput.value = utils.stripQuotes(this.config.getSubjectParameters(configSprite));
+    idInput.value = this.config.getSubjectParameter(configSprite, 0);
     idInput.addEventListener("input", () => {
-      this.config.replaceSpriteId(configSprite, utils.conditionallyQuote(idInput.value));
-      return this.updateConfig(false);
+      this.config.replaceSpriteId(configSprite, idInput.value);
+      return this.updateConfig(true);
     });
 
     if (currentInputType == "grid") {
@@ -346,15 +369,12 @@ export class Editor {
     const py = sprite.pivot?.y;
     utils.appendPointEditor(itemsDiv, "sprite-pivot", "Pivot").setValue(px, py);
     utils.replaceOrAppendChild(this.properties, itemsDiv);
+    idInput.focus();
   }
 
   private rebuildView() {
     const begin = Date.now();
     const inputsDiv = utils.createElement("div", "inputs");
-    this.applyZoom = () => {
-      inputsDiv.style.setProperty("--zoom", this.options.zoomLevel.toString());
-    };
-    this.applyZoom();
 
     let inputIndex = 0;
     for (const input of this.description.inputs) {
@@ -372,12 +392,15 @@ export class Editor {
         utils.addClickHandler(inputDiv, (event: MouseEvent) => {
           this.showProperties(event, "Input");
           this.rebuildInputProperties(input, configInput);
-          this.postMessage({
-            type: "selectLine",
-            lineNo: configInput.lineNo,
-            columnNo: this.config.getParameterColumn(configInput),
-          });
         });
+      utils.addDoubleClickHandler(inputDiv, () => {
+        this.hideProperties();
+        this.postMessage({
+          type: "selectLine",
+          lineNo: configInput.lineNo,
+          columnNo: this.config.getParameterColumn(configInput),
+        });
+      });
 
       if (this.options.showInputTitle) {
         const titleDiv = utils.appendElement(inputDiv, "div", "title");
@@ -456,16 +479,20 @@ export class Editor {
           textDiv.innerText = sprite.id;
         }
 
-        if (configSprite)
+        if (configSprite) {
           utils.addClickHandler(spriteDiv, (event: MouseEvent) => {
             this.showProperties(event, "Sprite");
             this.rebuildSpriteProperties(sprite, configSprite, configInput);
+          });
+          utils.addDoubleClickHandler(spriteDiv, () => {
+            this.hideProperties();
             this.postMessage({
               type: "selectLine",
               lineNo: configSprite.lineNo,
               columnNo: this.config.getParameterColumn(configSprite),
             });
           });
+        }
       }
     }
     return sourcesDiv;

@@ -37,7 +37,6 @@ declare const acquireVsCodeApi: any;
   });
 
   window.addEventListener("scroll", (event) => {
-    sprightEditor.hideProperties();
     sprightEditor.onScrolled();
   });
 

@@ -1,3 +1,6 @@
+
+import * as utils from './utils';
+
 type ConfigLine = {
   line: string;
   level: number;
@@ -14,6 +17,9 @@ export type Sprite = {
 };
 
 export type Subject = Input | Sprite;
+
+export type Parameter = string;
+export type ParameterList = Array<Parameter>;
 
 function splitLines(source: string) {
   function indexOfNonSpace(line: string) {
@@ -53,13 +59,45 @@ function getLineIndent(line: ConfigLine) {
   return line.line.substring(0, line.level);
 }
 
-function getLineParameters(line: ConfigLine) {
-  return line.line.substring(line.level + line.definition.length).trim();
+
+function formatParameterList(parameters: ParameterList): string {
+  const values = Array<string>();
+  for (const parameter of parameters)
+    values.push(utils.conditionallyQuote(parameter));
+  return values.join(' ');
 }
 
-function setLineParameters(line: ConfigLine, parameters: string) {
+function isWhiteSpace(c: string) {
+  return (c.trim() === '');
+}
+
+function parseParameterList(line: string): ParameterList {
+  let begin = 0;
+  const end = line.length;
+  let pos = 0;
+  let inString: string | undefined;
+  const parameters = Array<Parameter>();
+  for (const c of line) {
+    ++pos;
+    if ((!inString && isWhiteSpace(c)) || inString == c || pos == end) {
+      parameters.push(utils.stripQuotes(line.substring(begin, pos).trim()));
+      begin = pos;
+      inString = undefined;
+    }
+    else if (c == '"' || c == '"') {
+      inString = c;
+    }
+  }
+  return parameters;
+}
+
+function getLineParameters(line: ConfigLine): ParameterList {
+  return parseParameterList(line.line.substring(line.level + line.definition.length).trim());
+}
+
+function setLineParameters(line: ConfigLine, parameters: ParameterList) {
   line.line =
-    line.line.substring(0, line.level) + line.definition + " " + parameters;
+    line.line.substring(0, line.level) + line.definition + " " + formatParameterList(parameters);
 }
 
 export class Config {
@@ -94,12 +132,16 @@ export class Config {
     this.source = this.lines.map((x) => x.line).join("\n");
   }
 
-  public getSubjectParameters(subject: Subject) {
+  public getSubjectParameters(subject: Subject): ParameterList {
     const line = this.lines[subject.lineNo];
     return getLineParameters(line);
   }
 
-  public setSubjectParameters(subject: Subject, parameters: string) {
+  public getSubjectParameter(subject: Subject, index: number): string {
+    return this.getSubjectParameters(subject).at(index) || "";
+  }
+
+  public setSubjectParameters(subject: Subject, parameters: ParameterList) {
     const line = this.lines[subject.lineNo];
     return setLineParameters(line, parameters);
   }
@@ -116,6 +158,10 @@ export class Config {
   private findPropertyLine(subject: Subject, definition: string) {
     const lineNo = this.findPropertyLineNo(subject, definition);
     if (lineNo) return this.lines[lineNo];
+  }
+
+  public hasProperty(subject: Subject, definition: string) {
+    return this.findPropertyLine(subject, definition) !== undefined;
   }
 
   public getPropertyParameters(subject: Subject, definition: string) {
@@ -140,6 +186,10 @@ export class Config {
     if (lineNo) return this.lines[lineNo];
   }
 
+  public hasCommonProperty(subject: Subject, definition: string) {
+    return this.findCommonPropertyLine(subject, definition) !== undefined;
+  }
+
   public getCommonPropertyParameters(subject: Subject, definition: string) {
     const line = this.findCommonPropertyLine(subject, definition);
     if (line) return getLineParameters(line);
@@ -148,7 +198,7 @@ export class Config {
   public setProperty(
     subject: Subject,
     definition: string,
-    parameters: string
+    parameters: ParameterList
   ) {
     const line = this.findPropertyLine(subject, definition);
     if (line) setLineParameters(line, parameters);
@@ -167,10 +217,10 @@ export class Config {
   private insertProperty(
     subject: Subject,
     definition: string,
-    parameters: string
+    parameters: ParameterList
   ) {
     const indent = this.getChildIndent(subject);
-    const newLine = indent + definition + " " + parameters;
+    const newLine = indent + definition + " " + formatParameterList(parameters);
     this.lines.splice(subject.lineNo + 1, 0, {
       line: newLine,
       level: indent.length,
@@ -204,10 +254,10 @@ export class Config {
   public getInputType(input: Input) {
     const types = ["atlas", "grid", "grid-cells"];
     for (const type of types)
-      if (this.getPropertyParameters(input, type) !== undefined)
+      if (this.hasProperty(input, type))
         return type;
     for (const type of types)
-      if (this.getCommonPropertyParameters(input, type) !== undefined)
+      if (this.hasCommonProperty(input, type))
         return type;
     return "sprite";
   }
@@ -218,9 +268,9 @@ export class Config {
       return;
 
     if (newType !== "sprite" || configInput.sprites.length == 0) {
-      let parameters = "";
+      let parameters: ParameterList = [];
       if (newType == "grid" || newType == "grid-cells")
-        parameters = "16 16";
+        parameters = ["16", "16"];
       this.setProperty(configInput, newType, parameters);
     }
     if (type !== "sprite" || configInput.sprites.length == 1)
@@ -228,6 +278,6 @@ export class Config {
   }
 
   public replaceSpriteId(sprite: Sprite, id: string) {
-    this.setSubjectParameters(sprite, id);
+    this.setSubjectParameters(sprite, [id]);
   }
 }

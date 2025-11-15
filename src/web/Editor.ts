@@ -1,178 +1,9 @@
+
+import * as utils from "./utils";
 import { Config, Input as ConfigInput, Sprite as ConfigSprite } from "./Config";
-import { Description, Input, Rect, Sprite } from "./Description";
+import { Description, Input, Sprite } from "./Description";
 
 const zoomLevels = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 8, 10];
-
-function stripQuotes(text: string) {
-  if (text.length > 1 && (text[0] == '"' || text[0] == "'") && text[0] == text[text.length - 1])
-    return text.substring(1, text.length - 1);
-  return text;
-}
-
-function conditionallyQuote(text: string) {
-  for (const c of [' ', '"', "'"])
-    if (text.indexOf(c) != -1) {
-      if (text.indexOf('"') != -1)
-        return `'${text}'`;
-      return `"${text}"`;
-    }
-  return text;
-}
-
-function createElement(type: string, className: string) {
-  const element = document.createElement(type);
-  element.className = className;
-  return element;
-}
-
-function appendElement(parent: HTMLElement, type: string, className: string) {
-  return parent.appendChild(createElement(type, className));
-}
-
-function replaceOrAppendChild(parent: HTMLElement, child: HTMLElement) {
-  const prevChild = parent.getElementsByClassName(child.className).item(0);
-  if (prevChild)
-    parent.replaceChild(child, prevChild);
-  else
-    parent.appendChild(child);
-}
-
-function appendRect(parent: HTMLElement, rect: Rect, className: string) {
-  const rectDiv = appendElement(parent, "div", className);
-  rectDiv.style.setProperty("--rect_x", rect.x + "px");
-  rectDiv.style.setProperty("--rect_y", rect.y + "px");
-  rectDiv.style.setProperty("--rect_w", rect.w + "px");
-  rectDiv.style.setProperty("--rect_h", rect.h + "px");
-  return rectDiv;
-}
-
-class NumberEditor {
-  constructor(public input: HTMLInputElement) { }
-
-  setValue(value: any) {
-    this.input.value = value?.toString();
-    return this;
-  }
-  setMin(min: any) {
-    this.input.min = min?.toString();
-    return this;
-  }
-  setMax(max: any) {
-    this.input.max = max?.toString();
-    return this;
-  }
-}
-
-class PointEditor {
-  constructor(public inputX: HTMLInputElement, public inputY: HTMLInputElement) { }
-
-  setValue(valueX: any, valueY: any) {
-    this.inputX.value = valueX?.toString();
-    this.inputY.value = valueY?.toString();
-    return this;
-  }
-  setMin(min: any) {
-    this.inputX.min = min?.toString();
-    this.inputY.min = min?.toString();
-    return this;
-  }
-  setMax(max: any) {
-    this.inputX.max = max?.toString();
-    this.inputY.max = max?.toString();
-    return this;
-  }
-}
-
-function appendSelect(parent: HTMLElement, className: string, text: string) {
-  const label = appendElement(parent, "label", className) as HTMLLabelElement;
-  label.textContent = text;
-  const select = appendElement(parent, "select", className) as HTMLSelectElement;
-  select.id = "select-" + className;
-  label.htmlFor = select.id;
-  return select;
-}
-
-function appendOption(select: HTMLSelectElement, value: string, text: string, selected?: boolean) {
-  const option = appendElement(select, "option", "zoom") as HTMLOptionElement;
-  option.value = value;
-  option.text = text;
-  if (selected) option.selected = selected;
-  return option;
-}
-
-function appendSpinbox(parent: HTMLElement, className: string, text: string) {
-  const label = appendElement(parent, "label", className) as HTMLLabelElement;
-  label.textContent = text;
-  const input = appendElement(parent, "input", className) as HTMLInputElement;
-  input.id = "number-" + className;
-  input.type = "number";
-  label.htmlFor = input.id;
-  return new NumberEditor(input);
-}
-
-function appendPointEditor(parent: HTMLElement, className: string, text: string) {
-  const label = appendElement(parent, "label", className) as HTMLLabelElement;
-  label.textContent = text + " X";
-  const input = appendElement(parent, "span", className);
-  const inputX = appendSpinbox(input, "point-x", "");
-  const inputY = appendSpinbox(input, "point-y", "Y");
-  label.htmlFor = inputX.input.id;
-  return new PointEditor(inputX.input, inputY.input);
-}
-
-function appendTextbox(parent: HTMLElement, className: string, text: string) {
-  const label = appendElement(parent, "label", className) as HTMLLabelElement;
-  label.textContent = text;
-  const input = appendElement(parent, "input", className) as HTMLInputElement;
-  input.id = "text-" + className;
-  input.type = "text";
-  label.htmlFor = input.id;
-  return input;
-}
-
-function appendCheckbox(parent: HTMLElement, className: string, text: string, labelFirst?: boolean) {
-  const input = createElement("input", className) as HTMLInputElement;
-  input.id = "checkbox-" + className;
-  input.type = "checkbox";
-  const label = createElement("label", className) as HTMLLabelElement;
-  label.htmlFor = input.id;
-  label.textContent = text;
-  if (labelFirst) { parent.appendChild(label); parent.appendChild(input); }
-  else { parent.appendChild(input); parent.appendChild(label); }
-  return input;
-}
-
-function addClickHandler(element: HTMLElement, func: (event: MouseEvent) => void) {
-  element.addEventListener("click", (ev: MouseEvent) => {
-    func(ev);
-    ev.stopPropagation();
-  });
-}
-
-function addDoubleClickHandler(element: HTMLElement, func: () => void) {
-  element.addEventListener("dblclick", (ev: MouseEvent) => {
-    func();
-    ev.stopPropagation();
-  });
-}
-
-function addChangeHandler(select: HTMLSelectElement, func: (value: string) => void) {
-  select.addEventListener("change", () => {
-    if (select.selectedIndex >= 0)
-      func(select.item(select.selectedIndex)!.value as string);
-  });
-}
-
-function addVisibilityHandler(element: HTMLElement, func: () => void) {
-  new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-      if (entry.intersectionRatio > 0) {
-        func();
-        observer.disconnect();
-      }
-    });
-  }).observe(element);
-}
 
 type Options = {
   zoomLevel: number;
@@ -219,7 +50,7 @@ export class Editor {
     } as Options;
 
     const html = this.content.parentElement!.parentElement!;
-    addDoubleClickHandler(html, () => {
+    utils.addDoubleClickHandler(html, () => {
       this.postMessage({ type: "openDocument" });
     });
     this.rebuildToolbar();
@@ -350,75 +181,75 @@ export class Editor {
   }
 
   private rebuildToolbar() {
-    const itemsDiv = createElement("div", "items");
+    const itemsDiv = utils.createElement("div", "items");
 
-    const buildButton = appendElement(itemsDiv, "button", "build");
+    const buildButton = utils.appendElement(itemsDiv, "button", "build");
     buildButton.innerText = "build";
-    addClickHandler(buildButton, () => {
+    utils.addClickHandler(buildButton, () => {
       this.postMessage({
         type: "build",
       });
     });
 
-    const completeButton = appendElement(itemsDiv, "button", "auto");
+    const completeButton = utils.appendElement(itemsDiv, "button", "auto");
     completeButton.innerText = "auto";
-    addClickHandler(completeButton, () => {
+    utils.addClickHandler(completeButton, () => {
       this.postMessage({
         type: "autocomplete",
       });
     });
 
-    this.zoom = appendSelect(itemsDiv, "zoom", "  Zoom:");
+    this.zoom = utils.appendSelect(itemsDiv, "zoom", "  Zoom:");
     for (const level of zoomLevels)
-      appendOption(this.zoom, level.toString(), Math.round(level * 100) + "%");
-    addChangeHandler(this.zoom, (value: string) => {
+      utils.appendOption(this.zoom, level.toString(), Math.round(level * 100) + "%");
+    utils.addChangeHandler(this.zoom, (value: string) => {
       this.options.zoomLevel = Number(value);
       this.onStateChanged();
       if (this.applyZoom) this.applyZoom();
     });
     this.updateZoomSelection();
 
-    const showLabel = appendElement(itemsDiv, "label", "show-label");
+    const showLabel = utils.appendElement(itemsDiv, "label", "show-label");
     showLabel.innerText = "  Show:";
 
-    const showInputTitle = appendCheckbox(itemsDiv, "show-input", "input");
+    const showInputTitle = utils.appendCheckbox(itemsDiv, "show-input", "input");
     showInputTitle.checked = this.options.showInputTitle;
-    addClickHandler(showInputTitle, () => {
+    utils.addClickHandler(showInputTitle, () => {
       this.options.showInputTitle = showInputTitle.checked;
       this.onStateChanged();
       this.rebuildView();
     });
 
-    const showId = appendCheckbox(itemsDiv, "show-id", "id");
+    const showId = utils.appendCheckbox(itemsDiv, "show-id", "id");
     showId.checked = this.options.showId;
-    addClickHandler(showId, () => {
+    utils.addClickHandler(showId, () => {
       this.options.showId = showId.checked;
       this.onStateChanged();
       this.rebuildView();
     });
 
-    const showPivot = appendCheckbox(itemsDiv, "show-pivot", "pivot");
+    const showPivot = utils.appendCheckbox(itemsDiv, "show-pivot", "pivot");
     showPivot.checked = this.options.showPivot;
-    addClickHandler(showPivot, () => {
+    utils.addClickHandler(showPivot, () => {
       this.options.showPivot = showPivot.checked;
       this.onStateChanged();
       this.refreshDescription(true);
     });
 
-    const showTrimmedRect = appendCheckbox(itemsDiv, "show-trimmed-rect", "trimmed-rect");
+    const showTrimmedRect = utils.appendCheckbox(itemsDiv, "show-trimmed-rect", "trimmed-rect");
     showTrimmedRect.checked = this.options.showTrimmedRect;
-    addClickHandler(showTrimmedRect, () => {
+    utils.addClickHandler(showTrimmedRect, () => {
       this.options.showTrimmedRect = showTrimmedRect.checked;
       this.onStateChanged();
       this.refreshDescription(true);
     });
 
-    this.filter = appendTextbox(itemsDiv, "filter", "  Filter:");
+    this.filter = utils.appendTextbox(itemsDiv, "filter", "  Filter:");
     this.filter.type = "search";
     this.filter.addEventListener("input", () => { this.onFilterChanged(); });
     this.filter.value = this.options.filter || "";
 
-    replaceOrAppendChild(this.toolbar, itemsDiv);
+    utils.replaceOrAppendChild(this.toolbar, itemsDiv);
   }
 
   private matchesFilter(value: string) {
@@ -472,15 +303,15 @@ export class Editor {
     this.properties.style.left = left + "px";
     this.properties.style.top = top + "px";
 
-    const titleLabel = createElement("label", "title");
+    const titleLabel = utils.createElement("label", "title");
     titleLabel.textContent = title;
-    replaceOrAppendChild(this.properties, titleLabel);
+    utils.replaceOrAppendChild(this.properties, titleLabel);
   }
 
   private rebuildInputProperties(input: Input, configInput: ConfigInput) {
     const currentInputType = this.getInputType(configInput);
-    const itemsDiv = createElement("div", "items");
-    const typeSelect = appendSelect(itemsDiv, "type", "Type");
+    const itemsDiv = utils.createElement("div", "items");
+    const typeSelect = utils.appendSelect(itemsDiv, "type", "Type");
     const types = [
       ["sprite", "Single Sprite"],
       ["atlas", "Atlas"],
@@ -488,67 +319,69 @@ export class Editor {
       ["grid-cells", "Grid (Cell-Count)"]
     ];
     for (const type of types)
-      appendOption(typeSelect, type[0], type[1], type[0] == currentInputType);
+      utils.appendOption(typeSelect, type[0], type[1], type[0] == currentInputType);
 
-    addChangeHandler(typeSelect, async (type: string) => {
+    utils.addChangeHandler(typeSelect, async (type: string) => {
       await this.replaceInputType(configInput, type);
       this.rebuildInputProperties(input, configInput);
     });
 
     if (currentInputType === "grid") {
       const gridSize = this.config.getPropertyParameters(configInput, "grid");
-      appendPointEditor(itemsDiv, "cell-size", "Cell-Size").setMin(1).setValue(gridSize, gridSize);
-      appendPointEditor(itemsDiv, "grid-offset", "Grid-Offset").setMin(0);
-      appendPointEditor(itemsDiv, "grid-spacing", "Grid-Spacing").setMin(0);
+      utils.appendPointEditor(itemsDiv, "cell-size", "Cell-Size").setMin(1).setValue(gridSize, gridSize);
+      utils.appendPointEditor(itemsDiv, "grid-offset", "Grid-Offset").setMin(0);
+      utils.appendPointEditor(itemsDiv, "grid-spacing", "Grid-Spacing").setMin(0);
     }
     else if (currentInputType === "grid-cells") {
-      appendPointEditor(itemsDiv, "cell-count", "Cell-Count").setMin(1);
+      utils.appendPointEditor(itemsDiv, "cell-count", "Cell-Count").setMin(1);
     }
 
     if (currentInputType !== "sprite") {
-      appendSpinbox(itemsDiv, "max-sprites", "Max. Sprites").setMin(0);
-      appendElement(itemsDiv, "div", "dummy");
+      utils.appendSpinbox(itemsDiv, "max-sprites", "Max. Sprites").setMin(0);
+      utils.appendElement(itemsDiv, "div", "dummy");
 
-      const autoButton = appendElement(itemsDiv, "button", "auto");
+      const autoButton = utils.appendElement(itemsDiv, "button", "auto");
       autoButton.innerText = "auto";
-      addClickHandler(autoButton, () => {
+      utils.addClickHandler(autoButton, () => {
         this.postMessage({
           type: "autocomplete",
           pattern: input.filename,
         });
       });
     }
-    replaceOrAppendChild(this.properties, itemsDiv);
+    utils.replaceOrAppendChild(this.properties, itemsDiv);
   }
 
   private rebuildSpriteProperties(sprite: Sprite, configSprite: ConfigSprite, configInput: ConfigInput) {
     const currentInputType = this.getInputType(configInput);
-    const itemsDiv = createElement("div", "items");
+    const itemsDiv = utils.createElement("div", "items");
 
-    const idInput = appendTextbox(itemsDiv, "sprite-id", "ID");
-    idInput.value = stripQuotes(this.config.getSubjectParameters(configSprite));
-    idInput.addEventListener("input", () => { this.replaceSpriteId(configSprite, conditionallyQuote(idInput.value)); });
+    const idInput = utils.appendTextbox(itemsDiv, "sprite-id", "ID");
+    idInput.value = utils.stripQuotes(this.config.getSubjectParameters(configSprite));
+    idInput.addEventListener("input", () => {
+      this.replaceSpriteId(configSprite, utils.conditionallyQuote(idInput.value));
+    });
 
     if (currentInputType == "grid") {
-      appendPointEditor(itemsDiv, "sprite-span", "Cell-Span").setMin(0);
+      utils.appendPointEditor(itemsDiv, "sprite-span", "Cell-Span").setMin(0);
     }
     else if (currentInputType == "atlas") {
       const x = sprite.sourceRect.x;
       const y = sprite.sourceRect.y;
       const w = sprite.sourceRect.w;
       const h = sprite.sourceRect.h;
-      appendPointEditor(itemsDiv, "sprite-position", "Position").setMin(0).setValue(x, y);
-      appendPointEditor(itemsDiv, "sprite-size", "Size").setMin(1).setValue(w, h);
+      utils.appendPointEditor(itemsDiv, "sprite-position", "Position").setMin(0).setValue(x, y);
+      utils.appendPointEditor(itemsDiv, "sprite-size", "Size").setMin(1).setValue(w, h);
     }
     const px = sprite.pivot?.x;
     const py = sprite.pivot?.y;
-    appendPointEditor(itemsDiv, "sprite-pivot", "Pivot").setValue(px, py);
-    replaceOrAppendChild(this.properties, itemsDiv);
+    utils.appendPointEditor(itemsDiv, "sprite-pivot", "Pivot").setValue(px, py);
+    utils.replaceOrAppendChild(this.properties, itemsDiv);
   }
 
   private rebuildView() {
     const begin = Date.now();
-    const inputsDiv = createElement("div", "inputs");
+    const inputsDiv = utils.createElement("div", "inputs");
     this.applyZoom = () => {
       inputsDiv.style.setProperty("--zoom", this.options.zoomLevel.toString());
     };
@@ -564,10 +397,10 @@ export class Editor {
       if (!this.matchesFilter(input.filename))
         continue;
 
-      const inputDiv = appendElement(inputsDiv, "div", "input");
+      const inputDiv = utils.appendElement(inputsDiv, "div", "input");
 
       if (configInput)
-        addClickHandler(inputDiv, (event: MouseEvent) => {
+        utils.addClickHandler(inputDiv, (event: MouseEvent) => {
           this.showProperties(event, "Input");
           this.rebuildInputProperties(input, configInput);
           this.postMessage({
@@ -578,8 +411,8 @@ export class Editor {
         });
 
       if (this.options.showInputTitle) {
-        const titleDiv = appendElement(inputDiv, "div", "title");
-        const textDiv = appendElement(titleDiv, "div", "text");
+        const titleDiv = utils.appendElement(inputDiv, "div", "title");
+        const textDiv = utils.appendElement(titleDiv, "div", "text");
         textDiv.innerText = input.filename;
       }
       else {
@@ -595,41 +428,41 @@ export class Editor {
     this.cachedElements = this.cachedElementsNew;
     this.cachedElementsNew = new Map();
 
-    replaceOrAppendChild(this.content, inputsDiv);
+    utils.replaceOrAppendChild(this.content, inputsDiv);
     const duration = (Date.now() - begin) / 1000.0;
     console.log("Rebuilding view took", duration, "seconds");
   }
 
   private createSourceDiv(input: Input, configInput?: ConfigInput): HTMLElement {
     let spriteIndex = 0;
-    const sourcesDiv = createElement("div", "sources");
+    const sourcesDiv = utils.createElement("div", "sources");
     for (const sourceSprites of input.sourceSprites) {
       const source = this.description.sources[sourceSprites.sourceIndex];
-      const sourceDiv = appendElement(sourcesDiv, "div", "source");
-      const sourceFrameDiv = appendElement(sourceDiv, "div", "frame");
+      const sourceDiv = utils.appendElement(sourcesDiv, "div", "source");
+      const sourceFrameDiv = utils.appendElement(sourceDiv, "div", "frame");
 
       let sourceImageDiv = this.tryGetCachedElement(source.filename);
       if (!sourceImageDiv) {
-        sourceImageDiv = createElement("div", "image");
-        this.cacheElement(source.filename, sourceImageDiv);
-        addVisibilityHandler(sourceImageDiv, () => {
+        sourceImageDiv = utils.createElement("div", "image");
+        this.cacheElement(source.filename, sourceImageDiv!);
+        utils.addVisibilityHandler(sourceImageDiv, () => {
           sourceImageDiv!.style.setProperty("--filename", `url('${source.uri}'`);
         });
       }
       sourceFrameDiv.appendChild(sourceImageDiv);
-      sourceImageDiv.style.setProperty("--width", source.width + "px");
-      sourceImageDiv.style.setProperty("--height", source.height + "px");
+      sourceImageDiv!.style.setProperty("--width", source.width + "px");
+      sourceImageDiv!.style.setProperty("--height", source.height + "px");
 
-      const spritesDiv = appendElement(sourceFrameDiv, "div", "sprites");
+      const spritesDiv = utils.appendElement(sourceFrameDiv, "div", "sprites");
       for (const index of sourceSprites.spriteIndices) {
         const sprite = this.description.sprites[index];
         const configSprite = configInput?.sprites[spriteIndex++];
 
         if (this.options.showTrimmedRect && sprite.trimmedSourceRect) {
-          appendRect(spritesDiv, sprite.trimmedSourceRect, "trimmed-rect");
+          utils.appendRect(spritesDiv, sprite.trimmedSourceRect, "trimmed-rect");
         }
 
-        const spriteDiv = appendRect(
+        const spriteDiv = utils.appendRect(
           spritesDiv,
           sprite.sourceRect,
           "sprite"
@@ -645,17 +478,17 @@ export class Editor {
             (sprite.rect.x - sprite.trimmedRect.x);
           const ry = sprite.trimmedSourceRect.y +
             (sprite.rect.y - sprite.trimmedRect.y);
-          const pivotDiv = appendElement(spritesDiv, "div", "pivot");
+          const pivotDiv = utils.appendElement(spritesDiv, "div", "pivot");
           pivotDiv.style.setProperty("--x", rx + sprite.pivot.x + "px");
           pivotDiv.style.setProperty("--y", ry + sprite.pivot.y + "px");
         }
         if (this.options.showId) {
-          const textDiv = appendElement(spriteDiv, "div", "text");
+          const textDiv = utils.appendElement(spriteDiv, "div", "text");
           textDiv.innerText = sprite.id;
         }
 
         if (configSprite)
-          addClickHandler(spriteDiv, (event: MouseEvent) => {
+          utils.addClickHandler(spriteDiv, (event: MouseEvent) => {
             this.showProperties(event, "Sprite");
             this.rebuildSpriteProperties(sprite, configSprite, configInput);
             this.postMessage({

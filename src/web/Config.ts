@@ -200,4 +200,34 @@ export class Config {
     const line = this.lines[item.lineNo];
     return line.level + line.definition.length + 1;
   }
+
+  public getInputType(input: Input) {
+    const types = ["atlas", "grid", "grid-cells"];
+    for (const type of types)
+      if (this.getPropertyParameters(input, type) !== undefined)
+        return type;
+    for (const type of types)
+      if (this.getCommonPropertyParameters(input, type) !== undefined)
+        return type;
+    return "sprite";
+  }
+
+  public replaceInputType(configInput: Input, newType: string) {
+    const type = this.getInputType(configInput);
+    if (type == newType)
+      return;
+
+    if (newType !== "sprite" || configInput.sprites.length == 0) {
+      let parameters = "";
+      if (newType == "grid" || newType == "grid-cells")
+        parameters = "16 16";
+      this.setProperty(configInput, newType, parameters);
+    }
+    if (type !== "sprite" || configInput.sprites.length == 1)
+      this.removeProperty(configInput, type);
+  }
+
+  public replaceSpriteId(sprite: Sprite, id: string) {
+    this.setSubjectParameters(sprite, id);
+  }
 }

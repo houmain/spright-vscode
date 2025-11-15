@@ -58,16 +58,16 @@ export class Editor {
     this.postMessage({ type: "initialized" });
   }
 
-  updateZoomSelection() {
+  public updateZoomSelection() {
     this.zoom.selectedIndex = zoomLevels.indexOf(this.options.zoomLevel);
   }
 
-  focusFilter() {
+  public focusFilter() {
     this.filter.focus();
     this.filter.select();
   }
 
-  changeZoom(direction: number) {
+  public changeZoom(direction: number) {
     let n = zoomLevels.indexOf(this.options.zoomLevel);
     if (n == -1) n = 2;
     if (n > 0 && direction == -1) --n;
@@ -78,7 +78,7 @@ export class Editor {
     this.onStateChanged();
   }
 
-  onMessage(message: any) {
+  public onMessage(message: any) {
     switch (message.type) {
       case "setConfig":
         this.setConfig(message.config, message.description);
@@ -99,7 +99,7 @@ export class Editor {
     return result;
   }
 
-  setConfig(config: string, description: any) {
+  public setConfig(config: string, description: any) {
     if (config === this.config.source)
       return;
 
@@ -121,7 +121,7 @@ export class Editor {
     this.content.innerHTML = `<div class='error'>${message}</div>`;
   }
 
-  onStateChanged() {
+  public onStateChanged() {
     this.updateState({
       config: this.config.source,
       description: this.description,
@@ -131,12 +131,12 @@ export class Editor {
     } as State);
   }
 
-  onScrolled() {
+  public onScrolled() {
     if (this.onScrollTimeout) window.clearTimeout(this.onScrollTimeout);
     this.onScrollTimeout = window.setTimeout(() => this.onStateChanged(), 500);
   }
 
-  onFilterChanged() {
+  public onFilterChanged() {
     if (this.onFilterChangedTimeout) window.clearTimeout(this.onFilterChangedTimeout);
     this.onFilterChangedTimeout = window.setTimeout(() => {
       this.options.filter = (this.filter.value === "" ?
@@ -146,7 +146,7 @@ export class Editor {
     }, 500);
   }
 
-  restoreState(state: State) {
+  public restoreState(state: State) {
     this.config = new Config(state.config);
     this.description = state.description;
     this.options = state.options;
@@ -256,39 +256,6 @@ export class Editor {
     return (!this.options.filter || value.toLowerCase().includes(this.options.filter));
   }
 
-  private getInputType(configInput: ConfigInput) {
-    const types = ["atlas", "grid", "grid-cells"];
-    for (const type of types)
-      if (this.config.getPropertyParameters(configInput, type) !== undefined)
-        return type;
-    for (const type of types)
-      if (this.config.getCommonPropertyParameters(configInput, type) !== undefined)
-        return type;
-    return "sprite";
-  }
-
-  private async replaceInputType(configInput: ConfigInput, newType: string) {
-    const type = this.getInputType(configInput);
-    if (type == newType)
-      return;
-
-    if (newType !== "sprite" || configInput.sprites.length == 0) {
-      let parameters = "";
-      if (newType == "grid" || newType == "grid-cells")
-        parameters = "16 16";
-      this.config.setProperty(configInput, newType, parameters);
-    }
-    if (type !== "sprite" || configInput.sprites.length == 1)
-      this.config.removeProperty(configInput, type);
-
-    return this.updateConfig(true);
-  }
-
-  private async replaceSpriteId(configSprite: ConfigSprite, id: string) {
-    this.config.setSubjectParameters(configSprite, id);
-    return this.updateConfig(true);
-  }
-
   public hideProperties() {
     this.properties.style.visibility = "hidden";
   }
@@ -309,7 +276,7 @@ export class Editor {
   }
 
   private rebuildInputProperties(input: Input, configInput: ConfigInput) {
-    const currentInputType = this.getInputType(configInput);
+    const currentInputType = this.config.getInputType(configInput);
     const itemsDiv = utils.createElement("div", "items");
     const typeSelect = utils.appendSelect(itemsDiv, "type", "Type");
     const types = [
@@ -322,7 +289,8 @@ export class Editor {
       utils.appendOption(typeSelect, type[0], type[1], type[0] == currentInputType);
 
     utils.addChangeHandler(typeSelect, async (type: string) => {
-      await this.replaceInputType(configInput, type);
+      this.config.replaceInputType(configInput, type);
+      await this.updateConfig(true);
       this.rebuildInputProperties(input, configInput);
     });
 
@@ -353,13 +321,14 @@ export class Editor {
   }
 
   private rebuildSpriteProperties(sprite: Sprite, configSprite: ConfigSprite, configInput: ConfigInput) {
-    const currentInputType = this.getInputType(configInput);
+    const currentInputType = this.config.getInputType(configInput);
     const itemsDiv = utils.createElement("div", "items");
 
     const idInput = utils.appendTextbox(itemsDiv, "sprite-id", "ID");
     idInput.value = utils.stripQuotes(this.config.getSubjectParameters(configSprite));
     idInput.addEventListener("input", () => {
-      this.replaceSpriteId(configSprite, utils.conditionallyQuote(idInput.value));
+      this.config.replaceSpriteId(configSprite, utils.conditionallyQuote(idInput.value));
+      return this.updateConfig(false);
     });
 
     if (currentInputType == "grid") {

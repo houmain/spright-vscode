@@ -30,12 +30,6 @@
   margin-left: 4px;
 }
 
-input,
-select,
-button {
-  filter: drop-shadow(0px 0px 3px #00000033);
-}
-
 #properties {
   visibility: hidden;
   user-select: none;
@@ -105,7 +99,11 @@ button {
   color: var(--vscode-titleBar-activeForeground);
   border: 1px solid var(--vscode-widget-border);
   border-radius: 5px;
-  padding: 3px;
+  padding: 6px;
+}
+
+.input:hover {
+  border: 1px solid #0055ff9b;
 }
 
 .text {
@@ -155,6 +153,10 @@ body.vscode-dark .source .frame {
   width: calc(var(--rect_w) * var(--zoom));
   height: calc(var(--rect_h) * var(--zoom));
   overflow: hidden;
+}
+
+.deduced {
+  border-style: dashed;
 }
 
 .sprite:hover {

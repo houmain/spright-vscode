@@ -44,12 +44,16 @@ export function appendRect(parent: HTMLElement, rect: Rect, className: string) {
   return rectDiv;
 }
 
-class NumberEditor {
+export class NumberEditor {
   constructor(public input: HTMLInputElement) { }
 
   setValue(value: any) {
     this.input.value = value?.toString();
     return this;
+  }
+  setPlaceholder(value: any) {
+    if (value !== undefined)
+      this.input.placeholder = value.toString();
   }
   setMin(min: any) {
     this.input.min = min?.toString();
@@ -61,13 +65,19 @@ class NumberEditor {
   }
 }
 
-class PointEditor {
+export class PointEditor {
   constructor(public inputX: HTMLInputElement, public inputY: HTMLInputElement) { }
 
-  setValue(valueX: any, valueY: any) {
-    this.inputX.value = valueX?.toString();
-    this.inputY.value = valueY?.toString();
+  setValue(values: any[]) {
+    this.inputX.value = values?.at(0)?.toString();
+    this.inputY.value = values?.at(1)?.toString();
     return this;
+  }
+  setPlaceholder(values: any[]) {
+    if (values?.at(0) !== undefined)
+      this.inputX.placeholder = values.at(0).toString();
+    if (values?.at(1) !== undefined)
+      this.inputY.placeholder = values.at(1).toString();
   }
   setMin(min: any) {
     this.inputX.min = min?.toString();
@@ -78,6 +88,11 @@ class PointEditor {
     this.inputX.max = max?.toString();
     this.inputY.max = max?.toString();
     return this;
+  }
+  addInputHandler(func: (value: string[]) => void) {
+    const handler = () => { func([this.inputX.value, this.inputY.value]); };
+    addInputHandler(this.inputX, handler);
+    addInputHandler(this.inputY, handler);
   }
 }
 
@@ -98,7 +113,7 @@ export function appendOption(select: HTMLSelectElement, value: string, text: str
   return option;
 }
 
-export function appendSpinbox(parent: HTMLElement, className: string, text: string) {
+export function appendNumberEditor(parent: HTMLElement, className: string, text: string) {
   const label = appendElement(parent, "label", className) as HTMLLabelElement;
   label.textContent = text;
   const input = appendElement(parent, "input", className) as HTMLInputElement;
@@ -112,8 +127,8 @@ export function appendPointEditor(parent: HTMLElement, className: string, text: 
   const label = appendElement(parent, "label", className) as HTMLLabelElement;
   label.textContent = text + " X";
   const input = appendElement(parent, "span", className);
-  const inputX = appendSpinbox(input, "point-x", "");
-  const inputY = appendSpinbox(input, "point-y", "Y");
+  const inputX = appendNumberEditor(input, "point-x", "");
+  const inputY = appendNumberEditor(input, "point-y", "Y");
   label.htmlFor = inputX.input.id;
   return new PointEditor(inputX.input, inputY.input);
 }
@@ -151,6 +166,12 @@ export function addDoubleClickHandler(element: HTMLElement, func: () => void) {
   element.addEventListener("dblclick", (ev: MouseEvent) => {
     func();
     ev.stopPropagation();
+  });
+}
+
+export function addInputHandler(element: HTMLElement, func: () => void) {
+  element.addEventListener("input", (ev: Event) => {
+    func();
   });
 }
 

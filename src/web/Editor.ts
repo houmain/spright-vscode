@@ -1,6 +1,6 @@
 
 import * as utils from "./utils";
-import { Config, Input as ConfigInput, Sprite as ConfigSprite } from "./Config";
+import { Config, Input as ConfigInput, Sprite as ConfigSprite, Subject } from "./Config";
 import { Description, Input, Sprite } from "./Description";
 
 const zoomLevels = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 8, 10];
@@ -104,7 +104,7 @@ export class Editor {
       type: "updateConfig",
       config: this.config.source,
     });
-    if (forceRefresh)
+    if (forceRefresh ? forceRefresh : true)
       this.config.source = "";
 
     return result;
@@ -268,7 +268,7 @@ export class Editor {
 
     this.filter = utils.appendTextbox(itemsDiv, "filter", "  Filter:");
     this.filter.type = "search";
-    this.filter.addEventListener("input", () => { this.onFilterChanged(); });
+    utils.addInputHandler(this.filter, () => { this.onFilterChanged(); });
     this.filter.value = this.options.filter || "";
 
     utils.replaceOrAppendChild(this.toolbar, itemsDiv);
@@ -286,7 +286,7 @@ export class Editor {
     const offX = 20;
     const offY = 10;
     const width = this.properties.getBoundingClientRect().width;
-    const left = event.clientX + window.scrollX + (event.clientX + width > window.innerWidth ? -width - offX : offX);
+    const left = event.clientX + window.scrollX + (event.clientX + width + 100 > window.innerWidth ? -width - offX : offX);
     const top = event.clientY + window.scrollY + offY;
     this.properties.style.visibility = "visible";
     this.properties.style.left = left + "px";
@@ -295,6 +295,63 @@ export class Editor {
     const titleLabel = utils.createElement("label", "title");
     titleLabel.textContent = title;
     utils.replaceOrAppendChild(this.properties, titleLabel);
+  }
+
+  private bindSubjectTextbox(editor: HTMLInputElement, subject: Subject) {
+    editor.value = this.config.getSubjectParameter(subject, 0);
+    utils.addInputHandler(editor, () => {
+      this.config.setSubjectParameters(subject, [editor.value]);
+      this.updateConfig();
+    });
+  }
+
+  private bindNumberEditor(editor: utils.NumberEditor, subject: Subject, definition: string) {
+    editor.setValue(this.config.getPropertyParameters(subject, definition)!);
+    utils.addInputHandler(editor.input, () => {
+      if (!editor.input.value) {
+        this.config.removeProperty(subject, definition);
+      }
+      else {
+        this.config.setProperty(subject, definition, [editor.input.value]);
+      }
+      this.updateConfig();
+    });
+  }
+
+  private bindPointEditor(editor: utils.PointEditor, subject: Subject, definition: string, alwaysSetBoth?: boolean, dontRemoveEmpty?: boolean) {
+    editor.setValue(this.config.getPropertyParameters(subject, definition)!);
+    editor.addInputHandler((parameters) => {
+      if (!dontRemoveEmpty && parameters[0] === "" && parameters[1] === "") {
+        this.config.removeProperty(subject, definition);
+      }
+      else {
+        if (parameters[0] === "") parameters[0] = editor.inputX.placeholder;
+        if (alwaysSetBoth)
+          if (parameters[1] === "") parameters[1] = editor.inputY.placeholder || editor.inputX.placeholder;
+        this.config.setProperty(subject, definition, parameters);
+      }
+      this.updateConfig();
+    });
+  }
+
+  private bindRectEditors(posEditor: utils.PointEditor, sizeEditor: utils.PointEditor, subject: Subject, definition: string) {
+    const rect = this.config.getPropertyParameters(subject, definition) || ["0", "0", "1", "1"];
+    posEditor.setValue([rect[0], rect[1]]);
+    sizeEditor.setValue([rect[2], rect[3]]);
+    const setRect = () => {
+      this.config.setProperty(subject, definition, rect);
+      this.updateConfig();
+    };
+    posEditor.addInputHandler((parameters) => {
+      rect[0] = parameters[0] || "0";
+      rect[1] = parameters[1] || "0";
+      setRect();
+    });
+    sizeEditor.addInputHandler((parameters) => {
+      rect[2] = parameters[0] || "1";
+      rect[3] = parameters[1] || "1";
+      setRect();
+    });
   }
 
   private rebuildInputProperties(input: Input, configInput: ConfigInput) {
@@ -312,22 +369,34 @@ export class Editor {
 
     utils.addChangeHandler(typeSelect, async (type: string) => {
       this.config.replaceInputType(configInput, type);
-      await this.updateConfig(true);
+      await this.updateConfig();
       this.rebuildInputProperties(input, configInput);
     });
 
-    if (currentInputType === "grid") {
-      const gridSize = this.config.getPropertyParameters(configInput, "grid");
-      utils.appendPointEditor(itemsDiv, "cell-size", "Cell-Size").setMin(1).setValue(gridSize?.at(0), gridSize?.at(1));
-      utils.appendPointEditor(itemsDiv, "grid-offset", "Grid-Offset").setMin(0);
-      utils.appendPointEditor(itemsDiv, "grid-spacing", "Grid-Spacing").setMin(0);
+    if (currentInputType == "grid") {
+      const grid = utils.appendPointEditor(itemsDiv, currentInputType, "Cell-Size").setMin(1);
+      this.bindPointEditor(grid, configInput, currentInputType, false, true);
     }
     else if (currentInputType === "grid-cells") {
-      utils.appendPointEditor(itemsDiv, "cell-count", "Cell-Count").setMin(1);
+      const grid = utils.appendPointEditor(itemsDiv, currentInputType, "Cell-Count").setMin(0);
+      this.bindPointEditor(grid, configInput, currentInputType, true, true);
+      grid.setPlaceholder([0, 0]);
     }
 
-    if (currentInputType !== "sprite")
-      utils.appendSpinbox(itemsDiv, "max-sprites", "Max. Sprites").setMin(0);
+    if (currentInputType === "grid" || currentInputType === "grid-cells") {
+      const gridOffset = utils.appendPointEditor(itemsDiv, "grid-offset", "Grid-Offset").setMin(0);
+      this.bindPointEditor(gridOffset, configInput, "grid-offset");
+      gridOffset.setPlaceholder([0]);
+      const gridSpacing = utils.appendPointEditor(itemsDiv, "grid-spacing", "Grid-Spacing").setMin(0);
+      this.bindPointEditor(gridSpacing, configInput, "grid-spacing");
+      gridSpacing.setPlaceholder([0]);
+    }
+
+    if (currentInputType !== "sprite") {
+      const maxSprites = utils.appendNumberEditor(itemsDiv, "max-sprites", "Max. Sprites").setMin(0);
+      this.bindNumberEditor(maxSprites, configInput, "max-sprites");
+      maxSprites.setPlaceholder(1000);
+    }
 
     if (currentInputType !== "sprite" || isSequenceFilename(input.filename)) {
       utils.appendElement(itemsDiv, "div", "dummy");
@@ -347,29 +416,26 @@ export class Editor {
     const currentInputType = this.config.getInputType(configInput);
     const itemsDiv = utils.createElement("div", "items");
 
-    const idInput = utils.appendTextbox(itemsDiv, "sprite-id", "ID");
-    idInput.value = this.config.getSubjectParameter(configSprite, 0);
-    idInput.addEventListener("input", () => {
-      this.config.replaceSpriteId(configSprite, idInput.value);
-      return this.updateConfig(true);
-    });
+    const id = utils.appendTextbox(itemsDiv, "sprite-id", "ID");
+    this.bindSubjectTextbox(id, configSprite);
+    id.placeholder = sprite.id;
 
     if (currentInputType == "grid") {
-      utils.appendPointEditor(itemsDiv, "sprite-span", "Cell-Span").setMin(0);
+      const span = utils.appendPointEditor(itemsDiv, "sprite-span", "Cell-Span").setMin(1);
+      this.bindPointEditor(span, configSprite, "span", true);
+      span.setPlaceholder([1, 1]);
     }
     else if (currentInputType == "atlas") {
-      const x = sprite.sourceRect.x;
-      const y = sprite.sourceRect.y;
-      const w = sprite.sourceRect.w;
-      const h = sprite.sourceRect.h;
-      utils.appendPointEditor(itemsDiv, "sprite-position", "Position").setMin(0).setValue(x, y);
-      utils.appendPointEditor(itemsDiv, "sprite-size", "Size").setMin(1).setValue(w, h);
+      const pos = utils.appendPointEditor(itemsDiv, "sprite-position", "Position").setMin(0);
+      const size = utils.appendPointEditor(itemsDiv, "sprite-size", "Size").setMin(1);
+      this.bindRectEditors(pos, size, configSprite, "rect");
     }
-    const px = sprite.pivot?.x;
-    const py = sprite.pivot?.y;
-    utils.appendPointEditor(itemsDiv, "sprite-pivot", "Pivot").setValue(px, py);
+    const pivot = utils.appendPointEditor(itemsDiv, "sprite-pivot", "Pivot");
+    this.bindPointEditor(pivot, configSprite, "pivot", true);
+    pivot.setPlaceholder([sprite.pivot?.x, sprite.pivot?.y]);
+
     utils.replaceOrAppendChild(this.properties, itemsDiv);
-    idInput.focus();
+    id.focus();
   }
 
   private rebuildView() {
@@ -445,6 +511,9 @@ export class Editor {
       sourceImageDiv!.style.setProperty("--width", source.width + "px");
       sourceImageDiv!.style.setProperty("--height", source.height + "px");
 
+      if (!configInput)
+        continue;
+
       const spritesDiv = utils.appendElement(sourceFrameDiv, "div", "sprites");
       for (const index of sourceSprites.spriteIndices) {
         const sprite = this.description.sprites[index];
@@ -454,11 +523,8 @@ export class Editor {
           utils.appendRect(spritesDiv, sprite.trimmedSourceRect, "trimmed-rect");
         }
 
-        const spriteDiv = utils.appendRect(
-          spritesDiv,
-          sprite.sourceRect,
-          "sprite"
-        );
+        const spriteDiv = utils.appendRect(spritesDiv, sprite.sourceRect,
+          configSprite ? "sprite" : "sprite deduced");
         spriteDiv.title = sprite.id;
 
         if (this.options.showPivot &&

@@ -269,15 +269,11 @@ export class Config {
 
     if (newType !== "sprite" || configInput.sprites.length == 0) {
       let parameters: ParameterList = [];
-      if (newType == "grid" || newType == "grid-cells")
-        parameters = ["16", "16"];
+      if (newType == "grid") parameters = ["16"];
+      if (newType == "grid-cells") parameters = ["5", "0"];
       this.setProperty(configInput, newType, parameters);
     }
     if (type !== "sprite" || configInput.sprites.length == 1)
       this.removeProperty(configInput, type);
-  }
-
-  public replaceSpriteId(sprite: Sprite, id: string) {
-    this.setSubjectParameters(sprite, [id]);
   }
 }

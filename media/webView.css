@@ -11,17 +11,21 @@
 }
 
 #toolbar .items {
+  line-height: 30px;
   padding-left: 4px;
-  padding-bottom: 4px;
 }
 
 #toolbar .items * {
   vertical-align: middle;
   margin-right: 4px;
-  margin-top: 4px;
 }
 
 #toolbar input[type="text"] {
+  margin-left: 4px;
+  width: 100px;
+}
+
+#toolbar input[type="search"] {
   margin-left: 4px;
   width: 100px;
 }
@@ -102,7 +106,7 @@
   padding: 6px;
 }
 
-.input:hover {
+.input:not(:has(.sprite:hover)):hover {
   border: 1px solid #0055ff9b;
 }
 

@@ -1,10 +1,11 @@
 :root {
   --container-paddding: 8px;
-  --input-padding-vertical: 4px;
-  --button-padding-vertical: 5px;
-  --input-padding-horizontal: 4px;
+  --input-padding-vertical: 2px;
+  --input-padding-horizontal: 2px;
   --input-margin-vertical: 4px;
   --input-margin-horizontal: 0;
+  --button-padding-vertical: 5px;
+  --button-padding-horizontal: 8px;
   --sprite-rect-color: red;
   --zoom: 1;
 }
@@ -48,7 +49,7 @@ code {
 
 button {
   border: none;
-  padding: var(--button-padding-vertical) var(--input-padding-horizontal);
+  padding: var(--button-padding-vertical) var(--button-padding-horizontal);
   text-align: center;
   font-variant: all-small-caps;
   outline: 1px solid transparent;

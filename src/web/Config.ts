@@ -252,7 +252,7 @@ export class Config {
   }
 
   public getInputType(input: Input) {
-    const types = ["atlas", "grid", "grid-cells"];
+    const types = ["atlas", "grid", "grid-vertical", "grid-cells", "grid-cells-vertical"];
     for (const type of types)
       if (this.hasProperty(input, type))
         return type;
@@ -269,8 +269,10 @@ export class Config {
 
     if (newType !== "sprite" || configInput.sprites.length == 0) {
       let parameters: ParameterList = [];
-      if (newType == "grid") parameters = ["16"];
-      if (newType == "grid-cells") parameters = ["5", "0"];
+      if (newType == "grid" || newType == "grid-vertical")
+        parameters = ["16"];
+      if (newType == "grid-cells" || newType == "grid-cells-vertical")
+        parameters = ["5", "0"];
       this.setProperty(configInput, newType, parameters);
     }
     if (type !== "sprite" || configInput.sprites.length == 1)

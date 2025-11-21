@@ -362,28 +362,39 @@ export class Editor {
       ["sprite", "Single Sprite"],
       ["atlas", "Atlas"],
       ["grid", "Grid (Cell-Size)"],
-      ["grid-cells", "Grid (Cell-Count)"]
+      ["grid-cells", "Grid (Cell-Count)"],
     ];
     for (const type of types)
-      utils.appendOption(typeSelect, type[0], type[1], type[0] == currentInputType);
+      utils.appendOption(typeSelect, type[0], type[1], currentInputType.startsWith(type[0]));
 
-    utils.addChangeHandler(typeSelect, async (type: string) => {
+    let gridVertical: HTMLInputElement | undefined;
+    if (currentInputType.startsWith("grid")) {
+      gridVertical = utils.appendCheckbox(itemsDiv, "grid-vertical", "Vertical", true);
+      gridVertical.checked = (currentInputType === "grid-vertical" || currentInputType == "grid-cells-vertical");
+    }
+
+    const replaceInputType = async (type: string) => {
+      if (type.startsWith("grid") && gridVertical?.checked)
+        type += '-vertical';
       this.config.replaceInputType(configInput, type);
       await this.updateConfig();
       this.rebuildInputProperties(input, configInput);
-    });
+    };
+    utils.addChangeHandler(typeSelect, replaceInputType);
+    if (gridVertical)
+      utils.addInputHandler(gridVertical, () => { replaceInputType(typeSelect.value); });
 
-    if (currentInputType == "grid") {
+    if (currentInputType == "grid" || currentInputType == "grid-vertical") {
       const grid = utils.appendPointEditor(itemsDiv, currentInputType, "Cell-Size").setMin(1);
       this.bindPointEditor(grid, configInput, currentInputType, false, true);
     }
-    else if (currentInputType === "grid-cells") {
+    else if (currentInputType === "grid-cells" || currentInputType === "grid-cells-vertical") {
       const grid = utils.appendPointEditor(itemsDiv, currentInputType, "Cell-Count").setMin(0);
       this.bindPointEditor(grid, configInput, currentInputType, true, true);
       grid.setPlaceholder([0, 0]);
     }
 
-    if (currentInputType === "grid" || currentInputType === "grid-cells") {
+    if (currentInputType.startsWith("grid")) {
       const gridOffset = utils.appendPointEditor(itemsDiv, "grid-offset", "Grid-Offset").setMin(0);
       this.bindPointEditor(gridOffset, configInput, "grid-offset");
       gridOffset.setPlaceholder([0]);
@@ -420,7 +431,7 @@ export class Editor {
     this.bindSubjectTextbox(id, configSprite);
     id.placeholder = sprite.id;
 
-    if (currentInputType == "grid") {
+    if (currentInputType.startsWith("grid")) {
       const span = utils.appendPointEditor(itemsDiv, "sprite-span", "Cell-Span").setMin(1);
       this.bindPointEditor(span, configSprite, "span", true);
       span.setPlaceholder([1, 1]);

@@ -229,6 +229,29 @@ export class Config {
     this.fixupLineNumbers(subject.lineNo, +1);
   }
 
+  public clearSubject(subject: Subject) {
+    const subjectLevel = this.lines[subject.lineNo].level;
+    let lineNo = subject.lineNo + 1;
+    for (; lineNo < this.lines.length; ++lineNo)
+      if (this.lines[lineNo].level <= subjectLevel)
+        break;
+
+    if (!this.lines[lineNo - 1].line.trim()) {
+      this.lines[lineNo - 1].level = this.lines[lineNo].level;
+      --lineNo;
+    }
+
+    const count = lineNo - subject.lineNo - 1;
+    this.lines.splice(subject.lineNo + 1, count);
+    this.fixupLineNumbers(subject.lineNo, -count);
+  }
+
+  public removeSubject(subject: Subject) {
+    this.clearSubject(subject);
+    this.lines.splice(subject.lineNo, 1);
+    this.fixupLineNumbers(subject.lineNo, -1);
+  }
+
   public removeProperty(subject: Subject, definition: string) {
     const lineNo = this.findPropertyLineNo(subject, definition);
     if (lineNo) {
@@ -263,19 +286,21 @@ export class Config {
   }
 
   public replaceInputType(configInput: Input, newType: string) {
-    const type = this.getInputType(configInput);
-    if (type == newType)
+    const currentType = this.getInputType(configInput);
+    if (currentType == newType)
       return;
 
+    let parameters = this.getPropertyParameters(configInput, currentType);
+
+    this.clearSubject(configInput);
+    configInput.sprites = [];
+
     if (newType !== "sprite" || configInput.sprites.length == 0) {
-      let parameters: ParameterList = [];
-      if (newType == "grid" || newType == "grid-vertical")
+      if (newType.startsWith("grid") && !currentType.startsWith("grid"))
         parameters = ["16"];
-      if (newType == "grid-cells" || newType == "grid-cells-vertical")
+      if (newType.startsWith("grid-cells") && !currentType.startsWith("grid-cells"))
         parameters = ["5", "0"];
-      this.setProperty(configInput, newType, parameters);
+      this.setProperty(configInput, newType, parameters || []);
     }
-    if (type !== "sprite" || configInput.sprites.length == 1)
-      this.removeProperty(configInput, type);
   }
 }

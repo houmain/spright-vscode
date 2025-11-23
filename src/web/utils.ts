@@ -65,34 +65,34 @@ export class NumberEditor {
   }
 }
 
-export class PointEditor {
-  constructor(public inputX: HTMLInputElement, public inputY: HTMLInputElement) { }
+export class PairEditor {
+  constructor(public input1: HTMLInputElement, public input2: HTMLInputElement) { }
 
   setValue(values: any[]) {
-    this.inputX.value = values?.at(0)?.toString();
-    this.inputY.value = values?.at(1)?.toString();
+    this.input1.value = values?.at(0)?.toString();
+    this.input2.value = values?.at(1)?.toString();
     return this;
   }
   setPlaceholder(values: any[]) {
     if (values?.at(0) !== undefined)
-      this.inputX.placeholder = values.at(0).toString();
+      this.input1.placeholder = values.at(0).toString();
     if (values?.at(1) !== undefined)
-      this.inputY.placeholder = values.at(1).toString();
+      this.input2.placeholder = values.at(1).toString();
   }
   setMin(min: any) {
-    this.inputX.min = min?.toString();
-    this.inputY.min = min?.toString();
+    this.input1.min = min?.toString();
+    this.input2.min = min?.toString();
     return this;
   }
   setMax(max: any) {
-    this.inputX.max = max?.toString();
-    this.inputY.max = max?.toString();
+    this.input1.max = max?.toString();
+    this.input2.max = max?.toString();
     return this;
   }
   addInputHandler(func: (value: string[]) => void) {
-    const handler = () => { func([this.inputX.value, this.inputY.value]); };
-    addInputHandler(this.inputX, handler);
-    addInputHandler(this.inputY, handler);
+    const handler = () => { func([this.input1.value, this.input2.value]); };
+    addInputHandler(this.input1, handler);
+    addInputHandler(this.input2, handler);
   }
 }
 
@@ -106,7 +106,7 @@ export function appendSelect(parent: HTMLElement, className: string, text: strin
 }
 
 export function appendOption(select: HTMLSelectElement, value: string, text: string, selected?: boolean) {
-  const option = appendElement(select, "option", "zoom") as HTMLOptionElement;
+  const option = appendElement(select, "option", "option") as HTMLOptionElement;
   option.value = value;
   option.text = text;
   if (selected) option.selected = selected;
@@ -123,14 +123,18 @@ export function appendNumberEditor(parent: HTMLElement, className: string, text:
   return new NumberEditor(input);
 }
 
-export function appendPointEditor(parent: HTMLElement, className: string, text: string) {
+export function appendPairEditor(parent: HTMLElement, className: string, text1: string, text2: string) {
   const label = appendElement(parent, "label", className) as HTMLLabelElement;
-  label.textContent = text + " X";
+  label.textContent = text1;
   const input = appendElement(parent, "span", className);
-  const inputX = appendNumberEditor(input, "point-x", "");
-  const inputY = appendNumberEditor(input, "point-y", "Y");
-  label.htmlFor = inputX.input.id;
-  return new PointEditor(inputX.input, inputY.input);
+  const input1 = appendNumberEditor(input, "pair-1", "");
+  const input2 = appendNumberEditor(input, "pair-2", text2);
+  label.htmlFor = input1.input.id;
+  return new PairEditor(input1.input, input2.input);
+}
+
+export function appendPointEditor(parent: HTMLElement, className: string, text: string) {
+  return appendPairEditor(parent, className, text + "X", "Y");
 }
 
 export function appendTextbox(parent: HTMLElement, className: string, text: string) {

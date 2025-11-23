@@ -1,11 +1,12 @@
 
 import * as utils from "./utils";
-import { Config, Input as ConfigInput, Sprite as ConfigSprite, Subject } from "./Config";
+import { Config, Sheet as ConfigSheet, Input as ConfigInput, Sprite as ConfigSprite, Subject } from "./Config";
 import { Description, Input, Sprite } from "./Description";
 
 const zoomLevels = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 8, 10];
 
 type Options = {
+  sheetIndex: number;
   zoomLevel: number;
   filter?: string;
   showId: boolean;
@@ -33,6 +34,7 @@ export class Editor {
   private options: Options;
   private filter!: HTMLInputElement;
   private zoom!: HTMLSelectElement;
+  private sheet!: HTMLSelectElement;
   private cachedElements: Map<any, HTMLElement> = new Map();
   private cachedElementsNew: Map<any, HTMLElement> = new Map();
   private onFilterChangedTimeout?: number;
@@ -61,17 +63,26 @@ export class Editor {
     });
     this.rebuildToolbar();
 
+    this.toolbar.addEventListener("click", (e: MouseEvent) => { this.hideProperties(); e.stopPropagation(); });
+    this.toolbar.addEventListener("dblclick", (e: MouseEvent) => { e.stopPropagation(); });
     this.properties.addEventListener("click", (e: MouseEvent) => { e.stopPropagation(); });
     this.properties.addEventListener("dblclick", (e: MouseEvent) => { e.stopPropagation(); });
     this.properties.addEventListener("wheel", (e: WheelEvent) => { e.stopPropagation(); });
+
+    utils.addClickHandler(this.content, (event: MouseEvent) => {
+      this.showProperties(event, "Sheet");
+      this.rebuildSheetProperties();
+    });
 
     this.postMessage({ type: "initialized" });
   }
 
   private applyZoom() {
-    this.hideProperties();
-    this.content.style.setProperty("--zoom", this.options.zoomLevel.toString());
-    this.zoom.selectedIndex = zoomLevels.indexOf(this.options.zoomLevel);
+    if (this.content.style.getPropertyValue("--zoom") != this.options.zoomLevel.toString()) {
+      this.hideProperties();
+      this.content.style.setProperty("--zoom", this.options.zoomLevel.toString());
+      this.zoom.selectedIndex = zoomLevels.indexOf(this.options.zoomLevel);
+    }
   }
 
   public focusFilter() {
@@ -124,6 +135,7 @@ export class Editor {
     const duration = (Date.now() - begin) / 1000.0;
     console.log("Updating configuration took", duration, "seconds");
 
+    this.rebuildToolbar();
     this.rebuildView();
     this.onStateChanged();
   }
@@ -214,6 +226,22 @@ export class Editor {
       });
     });
 
+    this.sheet = utils.appendSelect(itemsDiv, "sheet", "  Sheet: ");
+    for (let i = 0; i < this.config.sheets.length; ++i) {
+      const sheet = this.config.sheets[i];
+      const name = (sheet.lineNo < 0 ? "default" : this.config.getSubjectParameter(sheet, 0));
+      utils.appendOption(this.sheet, i.toString(), name, (i == this.options.sheetIndex));
+    }
+    utils.addChangeHandler(this.sheet, () => {
+      this.options.sheetIndex = this.sheet.selectedIndex;
+      this.onStateChanged();
+    });
+
+    this.filter = utils.appendTextbox(itemsDiv, "filter", "  Filter:");
+    this.filter.type = "search";
+    utils.addInputHandler(this.filter, () => { this.onFilterChanged(); });
+    this.filter.value = this.options.filter || "";
+
     this.zoom = utils.appendSelect(itemsDiv, "zoom", "  Zoom:");
     for (const level of zoomLevels)
       utils.appendOption(this.zoom, level.toString(), Math.round(level * 100) + "%");
@@ -266,11 +294,6 @@ export class Editor {
       this.refreshDescription(true);
     });
 
-    this.filter = utils.appendTextbox(itemsDiv, "filter", "  Filter:");
-    this.filter.type = "search";
-    utils.addInputHandler(this.filter, () => { this.onFilterChanged(); });
-    this.filter.value = this.options.filter || "";
-
     utils.replaceOrAppendChild(this.toolbar, itemsDiv);
   }
 
@@ -306,7 +329,7 @@ export class Editor {
   }
 
   private bindNumberEditor(editor: utils.NumberEditor, subject: Subject, definition: string) {
-    editor.setValue(this.config.getPropertyParameters(subject, definition)!);
+    editor.setValue(this.config.getPropertyParameter(subject, definition, 0));
     utils.addInputHandler(editor.input, () => {
       if (!editor.input.value) {
         this.config.removeProperty(subject, definition);
@@ -318,23 +341,52 @@ export class Editor {
     });
   }
 
-  private bindPointEditor(editor: utils.PointEditor, subject: Subject, definition: string, alwaysSetBoth?: boolean, dontRemoveEmpty?: boolean) {
+  private bindCheckbox(checkbox: HTMLInputElement, subject: Subject, definition: string) {
+    checkbox.checked = (this.config.hasProperty(subject, definition) ?
+      this.config.getPropertyParameter(subject, definition, 0) || "true" : "false") === "true";
+    utils.addInputHandler(checkbox, () => {
+      if (!checkbox.checked) {
+        this.config.removeProperty(subject, definition);
+      }
+      else {
+        this.config.setProperty(subject, definition, []);
+      }
+      this.updateConfig();
+    });
+  }
+
+  private bindSelect(select: HTMLSelectElement, subject: Subject, definition: string) {
+    select.value = this.config.getPropertyParameter(subject, definition, 0) || "";
+    utils.addChangeHandler(select, () => {
+      const value = select.item(select.selectedIndex)!.value;
+      if (!value) {
+        this.config.removeProperty(subject, definition);
+      }
+      else {
+        this.config.setProperty(subject, definition, [value]);
+      }
+      this.updateConfig();
+    });
+  }
+
+  private bindPairEditor(editor: utils.PairEditor, subject: Subject, definition: string, alwaysSetBoth?: boolean, dontRemoveEmpty?: boolean) {
     editor.setValue(this.config.getPropertyParameters(subject, definition)!);
     editor.addInputHandler((parameters) => {
       if (!dontRemoveEmpty && parameters[0] === "" && parameters[1] === "") {
         this.config.removeProperty(subject, definition);
       }
       else {
-        if (parameters[0] === "") parameters[0] = editor.inputX.placeholder;
-        if (alwaysSetBoth)
-          if (parameters[1] === "") parameters[1] = editor.inputY.placeholder || editor.inputX.placeholder;
+        if (parameters[0] === "")
+          parameters[0] = editor.input1.placeholder;
+        if (alwaysSetBoth && parameters[1] === "")
+          parameters[1] = editor.input2.placeholder || editor.input1.placeholder || "0";
         this.config.setProperty(subject, definition, parameters);
       }
       this.updateConfig();
     });
   }
 
-  private bindRectEditors(posEditor: utils.PointEditor, sizeEditor: utils.PointEditor, subject: Subject, definition: string) {
+  private bindRectEditors(posEditor: utils.PairEditor, sizeEditor: utils.PairEditor, subject: Subject, definition: string) {
     const rect = this.config.getPropertyParameters(subject, definition) || ["0", "0", "1", "1"];
     posEditor.setValue([rect[0], rect[1]]);
     sizeEditor.setValue([rect[2], rect[3]]);
@@ -352,6 +404,81 @@ export class Editor {
       rect[3] = parameters[1] || "1";
       setRect();
     });
+  }
+
+  private rebuildSheetProperties() {
+    const configSheet = this.config.sheets[this.sheet.selectedIndex];
+
+    const currentPackType = "rows";
+    const currentDuplicatesMode = "keep";
+
+    const itemsDiv = utils.createElement("div", "items");
+    const packSelect = utils.appendSelect(itemsDiv, "pack", "Pack");
+    const types = [
+      ["", ""],
+      ["binpack", "Bin-Pack"],
+      ["rows", "Rows"],
+      ["columns", "Columns"],
+      ["compact", "Compact"],
+      ["origin", "Origin"],
+      ["single", "Single"],
+      ["layers", "Layers"],
+      ["keep", "Keep"],
+    ];
+    for (const type of types)
+      utils.appendOption(packSelect, type[0], type[1], currentPackType == type[0]);
+    this.bindSelect(packSelect, configSheet, "pack");
+
+    const duplicatesSelect = utils.appendSelect(itemsDiv, "duplicates", "Duplicates");
+    const deplicatesModes = [
+      ["", ""],
+      ["keep", "Keep"],
+      ["share", "Share"],
+      ["drop", "Drop"],
+    ];
+    for (const dup of deplicatesModes)
+      utils.appendOption(duplicatesSelect, dup[0], dup[1], currentDuplicatesMode == dup[0]);
+    this.bindSelect(duplicatesSelect, configSheet, "duplicates");
+
+    const padding = utils.appendPairEditor(itemsDiv, "padding", "Padding Sprite", "Sheet").setMin(0);
+    this.bindPairEditor(padding, configSheet, "padding");
+
+    const allowRotate = utils.appendCheckbox(itemsDiv, "allow-rotate", "Allow Rotate", true);
+    this.bindCheckbox(allowRotate, configSheet, "allow-rotate");
+
+    const fixedSize = utils.appendCheckbox(itemsDiv, "fixed-size", "Fixed Size", true);
+    fixedSize.checked = (this.config.hasProperty(configSheet, "width") ||
+      this.config.hasProperty(configSheet, "height"));
+    utils.addInputHandler(fixedSize, async () => {
+      this.config.replaceSheetFixedSize(configSheet, fixedSize.checked);
+      await this.updateConfig();
+      this.rebuildSheetProperties();
+    });
+
+    if (fixedSize.checked) {
+      const width = utils.appendNumberEditor(itemsDiv, "width", "Width").setMin(1);
+      this.bindNumberEditor(width, configSheet, "width");
+
+      const height = utils.appendNumberEditor(itemsDiv, "height", "Height").setMin(1);
+      this.bindNumberEditor(height, configSheet, "height");
+    }
+    else {
+      const maxWidth = utils.appendNumberEditor(itemsDiv, "max-width", "Max. Width").setMin(1);
+      this.bindNumberEditor(maxWidth, configSheet, "max-width");
+
+      const maxHeight = utils.appendNumberEditor(itemsDiv, "max-height", "Max. Height").setMin(1);
+      this.bindNumberEditor(maxHeight, configSheet, "max-height");
+
+      const divisibleWidth = utils.appendNumberEditor(itemsDiv, "divisible-width", "Divisible Width").setMin(1);
+      this.bindNumberEditor(divisibleWidth, configSheet, "divisible-width");
+
+      const powerOfTwo = utils.appendCheckbox(itemsDiv, "power-of-two", "Power Of Two", true);
+      this.bindCheckbox(powerOfTwo, configSheet, "power-of-two");
+
+      const square = utils.appendCheckbox(itemsDiv, "square", "Square", true);
+      this.bindCheckbox(square, configSheet, "square");
+    }
+    utils.replaceOrAppendChild(this.properties, itemsDiv);
   }
 
   private rebuildInputProperties(input: Input, configInput: ConfigInput) {
@@ -386,20 +513,20 @@ export class Editor {
 
     if (currentInputType == "grid" || currentInputType == "grid-vertical") {
       const grid = utils.appendPointEditor(itemsDiv, currentInputType, "Cell-Size").setMin(1);
-      this.bindPointEditor(grid, configInput, currentInputType, false, true);
+      this.bindPairEditor(grid, configInput, currentInputType, false, true);
     }
     else if (currentInputType === "grid-cells" || currentInputType === "grid-cells-vertical") {
       const grid = utils.appendPointEditor(itemsDiv, currentInputType, "Cell-Count").setMin(0);
-      this.bindPointEditor(grid, configInput, currentInputType, true, true);
+      this.bindPairEditor(grid, configInput, currentInputType, true, true);
       grid.setPlaceholder([0, 0]);
     }
 
     if (currentInputType.startsWith("grid")) {
       const gridOffset = utils.appendPointEditor(itemsDiv, "grid-offset", "Grid-Offset").setMin(0);
-      this.bindPointEditor(gridOffset, configInput, "grid-offset");
+      this.bindPairEditor(gridOffset, configInput, "grid-offset");
       gridOffset.setPlaceholder([0]);
       const gridSpacing = utils.appendPointEditor(itemsDiv, "grid-spacing", "Grid-Spacing").setMin(0);
-      this.bindPointEditor(gridSpacing, configInput, "grid-spacing");
+      this.bindPairEditor(gridSpacing, configInput, "grid-spacing");
       gridSpacing.setPlaceholder([0]);
     }
 
@@ -433,7 +560,7 @@ export class Editor {
 
     if (currentInputType.startsWith("grid")) {
       const span = utils.appendPointEditor(itemsDiv, "sprite-span", "Cell-Span").setMin(1);
-      this.bindPointEditor(span, configSprite, "span", true);
+      this.bindPairEditor(span, configSprite, "span", true);
       span.setPlaceholder([1, 1]);
     }
     else if (currentInputType == "atlas") {
@@ -442,7 +569,7 @@ export class Editor {
       this.bindRectEditors(pos, size, configSprite, "rect");
     }
     const pivot = utils.appendPointEditor(itemsDiv, "sprite-pivot", "Pivot");
-    this.bindPointEditor(pivot, configSprite, "pivot", true);
+    this.bindPairEditor(pivot, configSprite, "pivot", true);
     pivot.setPlaceholder([sprite.pivot?.x, sprite.pivot?.y]);
 
     utils.replaceOrAppendChild(this.properties, itemsDiv);

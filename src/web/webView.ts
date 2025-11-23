@@ -16,8 +16,6 @@ declare const acquireVsCodeApi: any;
   );
 
   const hideProperties = () => { sprightEditor.hideProperties(); };
-  content.addEventListener("click", hideProperties);
-  toolbar.addEventListener("click", hideProperties);
   window.addEventListener("resize", hideProperties);
   window.addEventListener("contextmenu", hideProperties);
 
@@ -26,7 +24,10 @@ declare const acquireVsCodeApi: any;
   });
 
   window.addEventListener("keydown", (event) => {
-    if (event.ctrlKey && event.code === "KeyF") {
+    if (event.code === "Escape") {
+      hideProperties();
+    }
+    else if (event.ctrlKey && event.code === "KeyF") {
       hideProperties();
       sprightEditor.focusFilter();
     }

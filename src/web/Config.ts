@@ -7,6 +7,10 @@ type ConfigLine = {
   definition: string;
 };
 
+export type Sheet = {
+  lineNo: number;
+};
+
 export type Input = {
   lineNo: number;
   sprites: Sprite[];
@@ -56,9 +60,10 @@ function splitLines(source: string) {
 }
 
 function getLineIndent(line: ConfigLine) {
+  if (line.level > line.line.length)
+    return ' '.repeat(line.level);
   return line.line.substring(0, line.level);
 }
-
 
 function formatParameterList(parameters: ParameterList): string {
   const values = Array<string>();
@@ -104,17 +109,23 @@ export class Config {
   private defaultIndent: string;
   private lines: ConfigLine[];
   public source: string;
+  public sheets: Sheet[];
   public inputs: Input[];
 
   constructor(source: string) {
     this.defaultIndent = "  ";
     this.lines = splitLines(source);
     this.source = source;
+    this.sheets = [];
     this.inputs = [];
 
     for (let i = 0; i < this.lines.length; ++i) {
       const line = this.lines[i];
-      if (line.definition === "input") {
+      if (line.level == 0 && line.definition === "sheet") {
+        this.sheets.push({
+          lineNo: i,
+        });
+      } else if (line.definition === "input") {
         this.inputs.push({
           lineNo: i,
           sprites: [],
@@ -126,6 +137,8 @@ export class Config {
           });
       }
     }
+    if (!this.sheets.length)
+      this.sheets.push({ lineNo: -1 });
   }
 
   public updateSource() {
@@ -146,7 +159,7 @@ export class Config {
     return setLineParameters(line, parameters);
   }
 
-  private findPropertyLineNo(subject: Subject, definition: string) {
+  private findPropertyLineNo(subject: Subject, definition: string): number | undefined {
     const line = this.lines[subject.lineNo];
     for (let i = subject.lineNo + 1; i < this.lines.length; ++i) {
       const child = this.lines[i];
@@ -155,18 +168,22 @@ export class Config {
     }
   }
 
-  private findPropertyLine(subject: Subject, definition: string) {
+  private findPropertyLine(subject: Subject, definition: string): ConfigLine | undefined {
     const lineNo = this.findPropertyLineNo(subject, definition);
     if (lineNo) return this.lines[lineNo];
   }
 
-  public hasProperty(subject: Subject, definition: string) {
+  public hasProperty(subject: Subject, definition: string): boolean {
     return this.findPropertyLine(subject, definition) !== undefined;
   }
 
-  public getPropertyParameters(subject: Subject, definition: string) {
+  public getPropertyParameters(subject: Subject, definition: string): ParameterList | undefined {
     const line = this.findPropertyLine(subject, definition);
     if (line) return getLineParameters(line);
+  }
+
+  public getPropertyParameter(subject: Subject, definition: string, index: number): Parameter | undefined {
+    return this.getPropertyParameters(subject, definition)?.at(index);
   }
 
   private findCommonPropertyLineNo(subject: Subject, definition: string) {
@@ -237,7 +254,7 @@ export class Config {
         break;
 
     if (!this.lines[lineNo - 1].line.trim()) {
-      this.lines[lineNo - 1].level = this.lines[lineNo].level;
+      this.lines[lineNo - 1].level = this.lines[subject.lineNo + 1].level;
       --lineNo;
     }
 
@@ -285,22 +302,46 @@ export class Config {
     return "sprite";
   }
 
-  public replaceInputType(configInput: Input, newType: string) {
-    const currentType = this.getInputType(configInput);
+  public replaceSheetFixedSize(sheet: Sheet, fixed: boolean) {
+    if (fixed) {
+      this.setProperty(sheet, "width", this.getPropertyParameters(sheet, "max-width") || ["512"]);
+      this.setProperty(sheet, "height", this.getPropertyParameters(sheet, "max-height") || ["512"]);
+      this.removeProperty(sheet, "max-width");
+      this.removeProperty(sheet, "max-height");
+      this.removeProperty(sheet, "divisible-width");
+      this.removeProperty(sheet, "power-of-two");
+      this.removeProperty(sheet, "square");
+    }
+    else {
+      const width = this.getPropertyParameters(sheet, "width");
+      if (width)
+        this.setProperty(sheet, "max-width", width);
+      const height = this.getPropertyParameters(sheet, "height");
+      if (height)
+        this.setProperty(sheet, "max-height", height);
+      this.removeProperty(sheet, "width");
+      this.removeProperty(sheet, "height");
+    }
+  }
+
+  public replaceInputType(input: Input, newType: string) {
+    const currentType = this.getInputType(input);
     if (currentType == newType)
       return;
 
-    let parameters = this.getPropertyParameters(configInput, currentType);
+    let parameters = this.getPropertyParameters(input, currentType);
 
-    this.clearSubject(configInput);
-    configInput.sprites = [];
+    this.clearSubject(input);
+    input.sprites = [];
 
-    if (newType !== "sprite" || configInput.sprites.length == 0) {
-      if (newType.startsWith("grid") && !currentType.startsWith("grid"))
-        parameters = ["16"];
-      if (newType.startsWith("grid-cells") && !currentType.startsWith("grid-cells"))
+    if (newType != currentType + "-vertical" && currentType != newType + "-vertical") {
+      if (newType.startsWith("grid-cells"))
         parameters = ["5", "0"];
-      this.setProperty(configInput, newType, parameters || []);
+      else if (newType.startsWith("grid"))
+        parameters = ["16"];
+      else
+        parameters = [];
     }
+    this.setProperty(input, newType, parameters || []);
   }
 }

@@ -1,12 +1,14 @@
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin-left: 1px;
+}
+
 #toolbar {
   user-select: none;
-  position: fixed;
-  top: 0;
   margin: 0;
-  z-index: 20;
   width: 100%;
-  max-height: 32px;
-  overflow: hidden;
   color: var(--vscode-menu-foreground);
   border-bottom: 1px solid var(--vscode-menu-border);
   background: var(--vscode-menu-background);
@@ -40,16 +42,15 @@
   visibility: hidden;
   user-select: none;
   position: absolute;
-  top: 100px;
-  left: 100px;
   margin: 0;
   z-index: 30;
-  padding: 4px;
+  padding: 8px;
   padding-top: 0px;
   color: var(--vscode-menu-foreground);
+  border-radius: 5px;
   border: 1px solid var(--vscode-menu-border);
   background: var(--vscode-menu-background);
-  filter: drop-shadow(4px 4px 4px #00000099);
+  filter: drop-shadow(4px 4px 4px #00000033);
 }
 
 #properties .title {
@@ -89,9 +90,9 @@
 }
 
 #content {
+  flex: 1;
+  overflow: auto;
   padding: var(--container-paddding);
-  position: relative;
-  margin-top: 32px;
 }
 
 .inputs {

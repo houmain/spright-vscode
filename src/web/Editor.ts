@@ -69,7 +69,7 @@ export class Editor {
     this.properties.addEventListener("dblclick", (e: MouseEvent) => { e.stopPropagation(); });
     this.properties.addEventListener("wheel", (e: WheelEvent) => { e.stopPropagation(); });
 
-    utils.addClickHandler(this.content, (event: MouseEvent) => {
+    utils.addRightClickHandler(this.content, (event: MouseEvent) => {
       this.showProperties(event, "Sheet");
       this.rebuildSheetProperties();
     });
@@ -78,10 +78,10 @@ export class Editor {
   }
 
   private applyZoom() {
+    this.zoom.selectedIndex = zoomLevels.indexOf(this.options.zoomLevel);
     if (this.content.style.getPropertyValue("--zoom") != this.options.zoomLevel.toString()) {
       this.hideProperties();
       this.content.style.setProperty("--zoom", this.options.zoomLevel.toString());
-      this.zoom.selectedIndex = zoomLevels.indexOf(this.options.zoomLevel);
     }
   }
 
@@ -229,7 +229,7 @@ export class Editor {
     this.sheet = utils.appendSelect(itemsDiv, "sheet", "  Sheet: ");
     for (let i = 0; i < this.config.sheets.length; ++i) {
       const sheet = this.config.sheets[i];
-      const name = (sheet.lineNo < 0 ? "default" : this.config.getSubjectParameter(sheet, 0));
+      const name = (sheet.lineNo < 0 ? "spright" : this.config.getSubjectParameter(sheet, 0));
       utils.appendOption(this.sheet, i.toString(), name, (i == this.options.sheetIndex));
     }
     utils.addChangeHandler(this.sheet, () => {
@@ -306,8 +306,8 @@ export class Editor {
   }
 
   private showProperties(event: MouseEvent, title: string) {
-    const offX = 20;
-    const offY = 10;
+    const offX = 0;
+    const offY = 2;
     const width = this.properties.getBoundingClientRect().width;
     const left = event.clientX + window.scrollX + (event.clientX + width + 100 > window.innerWidth ? -width - offX : offX);
     const top = event.clientY + window.scrollY + offY;
@@ -386,6 +386,25 @@ export class Editor {
     });
   }
 
+  private bindAlternatingPropertyEditor(editor: utils.PairEditor,
+    subject: Subject, definitionA: string, definitionB: string) {
+    const valueA = this.config.getPropertyParameters(subject, definitionA)?.at(0);
+    const valueB = this.config.getPropertyParameters(subject, definitionB)?.at(0);
+    editor.input1.value = (valueB || valueA || "");
+    editor.input2.checked = (valueB !== undefined);
+    editor.addInputHandler((parameters) => {
+      const checked = editor.input2.checked;
+      this.config.removeProperty(subject, checked ? definitionA : definitionB);
+      if (parameters[0] === "") {
+        this.config.removeProperty(subject, checked ? definitionB : definitionA);
+      }
+      else {
+        this.config.setProperty(subject, checked ? definitionB : definitionA, [parameters[0]]);
+      }
+      this.updateConfig();
+    });
+  }
+
   private bindRectEditors(posEditor: utils.PairEditor, sizeEditor: utils.PairEditor, subject: Subject, definition: string) {
     const rect = this.config.getPropertyParameters(subject, definition) || ["0", "0", "1", "1"];
     posEditor.setValue([rect[0], rect[1]]);
@@ -407,12 +426,9 @@ export class Editor {
   }
 
   private rebuildSheetProperties() {
+    const itemsDiv = utils.createElement("div", "items");
     const configSheet = this.config.sheets[this.sheet.selectedIndex];
 
-    const currentPackType = "rows";
-    const currentDuplicatesMode = "keep";
-
-    const itemsDiv = utils.createElement("div", "items");
     const packSelect = utils.appendSelect(itemsDiv, "pack", "Pack");
     const types = [
       ["", ""],
@@ -426,7 +442,7 @@ export class Editor {
       ["keep", "Keep"],
     ];
     for (const type of types)
-      utils.appendOption(packSelect, type[0], type[1], currentPackType == type[0]);
+      utils.appendOption(packSelect, type[0], type[1]);
     this.bindSelect(packSelect, configSheet, "pack");
 
     const duplicatesSelect = utils.appendSelect(itemsDiv, "duplicates", "Duplicates");
@@ -437,47 +453,30 @@ export class Editor {
       ["drop", "Drop"],
     ];
     for (const dup of deplicatesModes)
-      utils.appendOption(duplicatesSelect, dup[0], dup[1], currentDuplicatesMode == dup[0]);
+      utils.appendOption(duplicatesSelect, dup[0], dup[1]);
     this.bindSelect(duplicatesSelect, configSheet, "duplicates");
 
-    const padding = utils.appendPairEditor(itemsDiv, "padding", "Padding Sprite", "Sheet").setMin(0);
+    const padding = utils.appendPairEditor(itemsDiv, "padding", "Padding Inner", "Outer").setMin(0);
     this.bindPairEditor(padding, configSheet, "padding");
 
     const allowRotate = utils.appendCheckbox(itemsDiv, "allow-rotate", "Allow Rotate", true);
     this.bindCheckbox(allowRotate, configSheet, "allow-rotate");
 
-    const fixedSize = utils.appendCheckbox(itemsDiv, "fixed-size", "Fixed Size", true);
-    fixedSize.checked = (this.config.hasProperty(configSheet, "width") ||
-      this.config.hasProperty(configSheet, "height"));
-    utils.addInputHandler(fixedSize, async () => {
-      this.config.replaceSheetFixedSize(configSheet, fixedSize.checked);
-      await this.updateConfig();
-      this.rebuildSheetProperties();
-    });
+    const width = utils.appendPairEditor(itemsDiv, "width", "Width", "At Max").setMin(1).setType2("checkbox");
+    this.bindAlternatingPropertyEditor(width, configSheet, "width", "max-width");
 
-    if (fixedSize.checked) {
-      const width = utils.appendNumberEditor(itemsDiv, "width", "Width").setMin(1);
-      this.bindNumberEditor(width, configSheet, "width");
+    const height = utils.appendPairEditor(itemsDiv, "height", "Height", "At Max").setMin(1).setType2("checkbox");
+    this.bindAlternatingPropertyEditor(height, configSheet, "height", "max-height");
 
-      const height = utils.appendNumberEditor(itemsDiv, "height", "Height").setMin(1);
-      this.bindNumberEditor(height, configSheet, "height");
-    }
-    else {
-      const maxWidth = utils.appendNumberEditor(itemsDiv, "max-width", "Max. Width").setMin(1);
-      this.bindNumberEditor(maxWidth, configSheet, "max-width");
+    const divisibleWidth = utils.appendNumberEditor(itemsDiv, "divisible-width", "Divisible Width").setMin(1);
+    this.bindNumberEditor(divisibleWidth, configSheet, "divisible-width");
 
-      const maxHeight = utils.appendNumberEditor(itemsDiv, "max-height", "Max. Height").setMin(1);
-      this.bindNumberEditor(maxHeight, configSheet, "max-height");
+    const powerOfTwo = utils.appendCheckbox(itemsDiv, "power-of-two", "Power Of Two", true);
+    this.bindCheckbox(powerOfTwo, configSheet, "power-of-two");
 
-      const divisibleWidth = utils.appendNumberEditor(itemsDiv, "divisible-width", "Divisible Width").setMin(1);
-      this.bindNumberEditor(divisibleWidth, configSheet, "divisible-width");
+    const square = utils.appendCheckbox(itemsDiv, "square", "Square", true);
+    this.bindCheckbox(square, configSheet, "square");
 
-      const powerOfTwo = utils.appendCheckbox(itemsDiv, "power-of-two", "Power Of Two", true);
-      this.bindCheckbox(powerOfTwo, configSheet, "power-of-two");
-
-      const square = utils.appendCheckbox(itemsDiv, "square", "Square", true);
-      this.bindCheckbox(square, configSheet, "square");
-    }
     utils.replaceOrAppendChild(this.properties, itemsDiv);
   }
 
@@ -593,11 +592,11 @@ export class Editor {
       const inputDiv = utils.appendElement(inputsDiv, "div", "input");
 
       if (configInput)
-        utils.addClickHandler(inputDiv, (event: MouseEvent) => {
+        utils.addRightClickHandler(inputDiv, (event: MouseEvent) => {
           this.showProperties(event, "Input");
           this.rebuildInputProperties(input, configInput);
         });
-      utils.addDoubleClickHandler(inputDiv, () => {
+      utils.addClickHandler(inputDiv, () => {
         this.hideProperties();
         this.postMessage({
           type: "selectLine",
@@ -684,11 +683,11 @@ export class Editor {
         }
 
         if (configSprite) {
-          utils.addClickHandler(spriteDiv, (event: MouseEvent) => {
+          utils.addRightClickHandler(spriteDiv, (event: MouseEvent) => {
             this.showProperties(event, "Sprite");
             this.rebuildSpriteProperties(sprite, configSprite, configInput);
           });
-          utils.addDoubleClickHandler(spriteDiv, () => {
+          utils.addClickHandler(spriteDiv, () => {
             this.hideProperties();
             this.postMessage({
               type: "selectLine",

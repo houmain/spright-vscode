@@ -159,8 +159,13 @@ export class Config {
     return setLineParameters(line, parameters);
   }
 
+  private getSubjectLine(subject: Subject): ConfigLine {
+    const beforeFirstLine: ConfigLine = { line: "", level: -1, definition: "" };
+    return (subject.lineNo == -1 ? beforeFirstLine : this.lines[subject.lineNo]);
+  }
+
   private findPropertyLineNo(subject: Subject, definition: string): number | undefined {
-    const line = this.lines[subject.lineNo];
+    const line = this.getSubjectLine(subject);
     for (let i = subject.lineNo + 1; i < this.lines.length; ++i) {
       const child = this.lines[i];
       if (child.level <= line.level) break;
@@ -170,7 +175,7 @@ export class Config {
 
   private findPropertyLine(subject: Subject, definition: string): ConfigLine | undefined {
     const lineNo = this.findPropertyLineNo(subject, definition);
-    if (lineNo) return this.lines[lineNo];
+    if (lineNo !== undefined) return this.lines[lineNo];
   }
 
   public hasProperty(subject: Subject, definition: string): boolean {
@@ -187,7 +192,7 @@ export class Config {
   }
 
   private findCommonPropertyLineNo(subject: Subject, definition: string) {
-    const line = this.lines[subject.lineNo];
+    const line = this.getSubjectLine(subject);
     let belowLevel = line.level;
     for (let i = subject.lineNo - 1; i >= 0; --i) {
       const parent = this.lines[i];
@@ -200,7 +205,7 @@ export class Config {
 
   private findCommonPropertyLine(subject: Subject, definition: string) {
     const lineNo = this.findCommonPropertyLineNo(subject, definition);
-    if (lineNo) return this.lines[lineNo];
+    if (lineNo !== undefined) return this.lines[lineNo];
   }
 
   public hasCommonProperty(subject: Subject, definition: string) {
@@ -223,6 +228,8 @@ export class Config {
   }
 
   private getChildIndent(subject: Subject) {
+    if (subject.lineNo < 0)
+      return "";
     const line = this.lines[subject.lineNo];
     if (subject.lineNo < this.lines.length) {
       const child = this.lines[subject.lineNo + 1];
@@ -243,10 +250,12 @@ export class Config {
       level: indent.length,
       definition,
     });
-    this.fixupLineNumbers(subject.lineNo, +1);
+    this.fixupLineNumbers(subject.lineNo + 1, +1);
   }
 
   public clearSubject(subject: Subject) {
+    if (subject.lineNo < 0)
+      return;
     const subjectLevel = this.lines[subject.lineNo].level;
     let lineNo = subject.lineNo + 1;
     for (; lineNo < this.lines.length; ++lineNo)
@@ -271,7 +280,7 @@ export class Config {
 
   public removeProperty(subject: Subject, definition: string) {
     const lineNo = this.findPropertyLineNo(subject, definition);
-    if (lineNo) {
+    if (lineNo !== undefined) {
       this.lines.splice(lineNo, 1);
       this.fixupLineNumbers(lineNo, -1);
     }
@@ -286,8 +295,8 @@ export class Config {
     }
   }
 
-  public getParameterColumn(item: Subject) {
-    const line = this.lines[item.lineNo];
+  public getParameterColumn(subject: Subject) {
+    const line = this.getSubjectLine(subject);
     return line.level + line.definition.length + 1;
   }
 

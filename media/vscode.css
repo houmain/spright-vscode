@@ -2,8 +2,6 @@
   --container-paddding: 8px;
   --input-padding-vertical: 2px;
   --input-padding-horizontal: 2px;
-  --input-margin-vertical: 4px;
-  --input-margin-horizontal: 0;
   --button-padding-vertical: 5px;
   --button-padding-horizontal: 8px;
   --sprite-rect-color: red;
@@ -21,12 +19,6 @@ body {
 ol,
 ul {
   padding-left: var(--container-paddding);
-}
-
-body>*,
-form>* {
-  margin-block-start: var(--input-margin-vertical);
-  margin-block-end: var(--input-margin-vertical);
 }
 
 *:focus {

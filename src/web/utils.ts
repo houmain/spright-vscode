@@ -89,8 +89,20 @@ export class PairEditor {
     this.input2.max = max?.toString();
     return this;
   }
+  setType1(type: string) {
+    this.input1.type = type;
+    return this;
+  }
+  setType2(type: string) {
+    this.input2.type = type;
+    return this;
+  }
   addInputHandler(func: (value: string[]) => void) {
-    const handler = () => { func([this.input1.value, this.input2.value]); };
+    const handler = () => {
+      if (this.input1.value === "" && this.input2.value !== "" && this.input2.type === "text")
+        this.input1.value = this.input1.min;
+      func([this.input1.value, this.input2.value]);
+    };
     addInputHandler(this.input1, handler);
     addInputHandler(this.input2, handler);
   }
@@ -109,7 +121,7 @@ export function appendOption(select: HTMLSelectElement, value: string, text: str
   const option = appendElement(select, "option", "option") as HTMLOptionElement;
   option.value = value;
   option.text = text;
-  if (selected) option.selected = selected;
+  if (selected) option.selected = true;
   return option;
 }
 
@@ -161,6 +173,13 @@ export function appendCheckbox(parent: HTMLElement, className: string, text: str
 
 export function addClickHandler(element: HTMLElement, func: (event: MouseEvent) => void) {
   element.addEventListener("click", (ev: MouseEvent) => {
+    func(ev);
+    ev.stopPropagation();
+  });
+}
+
+export function addRightClickHandler(element: HTMLElement, func: (event: MouseEvent) => void) {
+  element.addEventListener("contextmenu", (ev: MouseEvent) => {
     func(ev);
     ev.stopPropagation();
   });

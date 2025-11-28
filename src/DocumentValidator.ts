@@ -44,7 +44,7 @@ export class DocumentValidator {
   diagnostics: vscode.Diagnostic[] = [];
   describeOnlyInput = false;
 
-  constructor(public document: vscode.TextDocument) {}
+  constructor(public document: vscode.TextDocument) { }
 
   async getDescription(spright: Spright, describeOnlyInput: boolean) {
     const config = utils.toNewLineSeparators(this.document.getText());
@@ -63,8 +63,8 @@ export class DocumentValidator {
     }
   }
 
-  async autocompleteConfig(spright: Spright, pattern?: string) {
-    const result = await spright.autocompleteConfig(
+  async completeConfig(spright: Spright, pattern?: string) {
+    const result = await spright.completeConfig(
       this.document.fileName,
       this.document.getText(),
       pattern

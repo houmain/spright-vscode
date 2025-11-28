@@ -146,7 +146,7 @@ export function appendPairEditor(parent: HTMLElement, className: string, text1: 
 }
 
 export function appendPointEditor(parent: HTMLElement, className: string, text: string) {
-  return appendPairEditor(parent, className, text + "X", "Y");
+  return appendPairEditor(parent, className, text + " X", "Y");
 }
 
 export function appendTextbox(parent: HTMLElement, className: string, text: string) {

@@ -34,8 +34,8 @@ export class Spright {
     const workingDirectory = params.workingDirectory
       ? params.workingDirectory
       : params.input
-      ? dirname(params.input)
-      : ".";
+        ? dirname(params.input)
+        : ".";
 
     const begin = Date.now();
     const result = await utils.exec(
@@ -49,7 +49,7 @@ export class Spright {
     return result;
   }
 
-  async autocompleteConfig(
+  async completeConfig(
     configFilename: string,
     config: string,
     pattern?: string

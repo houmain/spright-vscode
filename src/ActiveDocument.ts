@@ -146,10 +146,10 @@ export class ActiveDocument {
     this.onChangedEmitter.fire(this.lastChangeEvent);
   }
 
-  async autocompleteConfig(pattern?: string) {
+  async completeConfig(pattern?: string) {
     if (this.document && this.spright) {
       const validator = this.getValidator(this.document);
-      await validator.autocompleteConfig(this.spright, pattern);
+      await validator.completeConfig(this.spright, pattern);
       this.updateDiagnostics(validator);
     }
   }

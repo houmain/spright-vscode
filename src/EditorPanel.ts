@@ -83,8 +83,8 @@ export class EditorPanel {
           this.activeDocument.describeOnlyInput = e.describeOnlyInput;
           return this.activeDocument.validate();
 
-        case "autocomplete":
-          return this.activeDocument.autocompleteConfig(e.pattern);
+        case "complete":
+          return this.activeDocument.completeConfig(e.pattern);
 
         case "build":
           return this.activeDocument.buildOutput();

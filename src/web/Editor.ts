@@ -222,7 +222,7 @@ export class Editor {
     completeButton.innerText = "complete";
     utils.addClickHandler(completeButton, () => {
       this.postMessage({
-        type: "autocomplete",
+        type: "complete",
       });
     });
 
@@ -542,7 +542,7 @@ export class Editor {
       autoButton.innerText = "complete";
       utils.addClickHandler(autoButton, () => {
         this.postMessage({
-          type: "autocomplete",
+          type: "complete",
           pattern: input.filename,
         });
       });

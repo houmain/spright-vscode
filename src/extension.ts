@@ -46,7 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand("spright.complete", () => {
-      return activeDocument.autocompleteConfig();
+      return activeDocument.completeConfig();
     })
   );
 

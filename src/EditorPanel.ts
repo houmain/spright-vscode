@@ -10,10 +10,10 @@ function getHtmlForWebview(
   const getWebviewPath = (path: string, file: string) => {
     return webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, path, file));
   };
-  const scriptUri = getWebviewPath("out/web", "webView.js");
+  const scriptUri = getWebviewPath("out/web", "EditorWebview.js");
   const styleResetUri = getWebviewPath("media", "reset.css");
   const styleVSCodeUri = getWebviewPath("media", "vscode.css");
-  const styleMainUri = getWebviewPath("media", "webView.css");
+  const styleMainUri = getWebviewPath("media", "EditorWebview.css");
 
   // Use a nonce to whitelist which scripts can be run
   const nonce = utils.getNonce();

@@ -188,7 +188,7 @@ export class Editor {
 
     this.postMessage({
       type: "refreshDescription",
-      describeOnlyInput: !(
+      sheetDescriptionNeeded: (
         this.options.showPivot || this.options.showTrimmedRect
       ),
     });

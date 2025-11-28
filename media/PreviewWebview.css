@@ -1,0 +1,38 @@
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin-left: 1px;
+}
+
+#content {
+  flex: 1;
+  overflow: auto;
+  padding: var(--container-paddding);
+}
+
+.textures {
+  margin-top: 3px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.texture {
+  position: relative;
+}
+
+.texture .frame {
+  position: relative;
+  display: inline-block;
+  border: 1px solid gray;
+  background: repeating-conic-gradient(#eee 0% 25%, #ddd 0% 50%) 50% / 16px 16px;
+}
+
+.texture .image {
+  background-image: var(--filename);
+  background-size: cover;
+  image-rendering: pixelated;
+  width: calc(var(--width) * var(--zoom));
+  height: calc(var(--height) * var(--zoom));
+}

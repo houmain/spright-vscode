@@ -67,14 +67,16 @@ export class Spright {
   async getDescription(
     configFilename: string,
     config: string,
-    describeOnlyInput: boolean
+    mode?: string,
+    path?: string
   ) {
     return this.execute({
       workingDirectory: dirname(configFilename),
-      mode: describeOnlyInput ? "describe-input" : "describe",
+      mode,
       input: "stdin",
       output: "stdout",
       stdin: config,
+      path,
     });
   }
 

@@ -23,11 +23,13 @@ export class ActiveDocument {
   private validating = false;
   private validateOnceMore = false;
   private viewColumn?: vscode.ViewColumn;
+  private previewRequested = false;
 
   document?: vscode.TextDocument;
-  describeOnlyInput = true;
+  sheetDescriptionNeeded = false;
 
   constructor(
+    readonly context: vscode.ExtensionContext,
     private sprightProvider: SprightProvider,
     settingsProvider: SettingsProvider
   ) {
@@ -58,6 +60,15 @@ export class ActiveDocument {
         this.document = editor.document;
         this.validate();
       }
+    }
+  }
+
+  public async requestPreview(request: boolean) {
+    if (this.previewRequested === request)
+      return;
+    this.previewRequested = request;
+    if (this.previewRequested) {
+      return this.validate(true);
     }
   }
 
@@ -112,16 +123,22 @@ export class ActiveDocument {
   private getValidator(document: vscode.TextDocument) {
     let validator = this.documentValidators.get(document.uri);
     if (!validator) {
-      validator = new DocumentValidator(document);
+      validator = new DocumentValidator(this.context, document);
       this.documentValidators.set(document.uri, validator);
     }
     return validator;
   }
 
-  async validate() {
+  async validate(invalidatePreview?: boolean) {
     if (this.spright && this.document) {
       const validator = this.getValidator(this.document);
-      await validator.getDescription(this.spright, this.describeOnlyInput);
+
+      if (invalidatePreview)
+        validator.invalidatePreview();
+
+      await validator.getDescription(this.spright,
+        this.sheetDescriptionNeeded, this.previewRequested);
+
       this.updateDiagnostics(validator);
       this.fireChange(this.document);
     }

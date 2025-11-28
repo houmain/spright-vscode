@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { Settings, SettingsProvider } from "./SettingsProvider";
 import { Spright } from "./Spright";
 import * as utils from "./utils";
+import { getStorageUri } from "./extension";
 
 const platformSuffix = (() => {
   if (process.platform === "win32" && process.arch == "x64") return "win64";
@@ -19,7 +20,7 @@ export class SprightProvider {
   constructor(
     readonly context: vscode.ExtensionContext,
     readonly settingsProvider: SettingsProvider
-  ) {}
+  ) { }
 
   private getDownloadURL(version: string) {
     return vscode.Uri.from({
@@ -29,18 +30,12 @@ export class SprightProvider {
     }).toString();
   }
 
-  private getStorageUri() {
-    return this.context.storageUri
-      ? this.context.storageUri
-      : this.context.globalStorageUri;
-  }
-
   private getSprightDirectoryUri(settings: Settings) {
     if (settings.sprightPath) {
       return vscode.Uri.file(settings.sprightPath);
     }
     return vscode.Uri.joinPath(
-      this.getStorageUri(),
+      getStorageUri(this.context),
       `spright-${settings.sprightVersion}-${platformSuffix}`
     );
   }
@@ -62,13 +57,14 @@ export class SprightProvider {
   }
 
   private async installSpright(version: string) {
-    await utils.makeDirectory(this.getStorageUri().fsPath);
+    const storageUri = getStorageUri(this.context);
+    await utils.makeDirectory(storageUri.fsPath);
     const tempFilename = vscode.Uri.joinPath(
-      this.getStorageUri(),
+      storageUri,
       ".temp"
     ).fsPath;
     await utils.download(this.getDownloadURL(version), tempFilename);
-    await utils.extractZip(tempFilename, this.getStorageUri().fsPath);
+    await utils.extractZip(tempFilename, storageUri.fsPath);
   }
 
   async getSpright(): Promise<Spright> {

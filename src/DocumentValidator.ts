@@ -4,6 +4,7 @@ import * as utils from "./utils";
 import { Spright } from "./Spright";
 import { Description } from "./web/Description";
 import { Settings } from "./SettingsProvider";
+import { getPreviewStorageUri } from "./extension";
 
 const emptyDescription: Description = {
   inputs: [],
@@ -42,19 +43,30 @@ export class DocumentValidator {
   config = "";
   description = emptyDescription;
   diagnostics: vscode.Diagnostic[] = [];
-  describeOnlyInput = false;
+  requestedSheetDescription = false;
+  requestedPreview = false;
 
-  constructor(public document: vscode.TextDocument) { }
+  constructor(
+    readonly context: vscode.ExtensionContext,
+    public document: vscode.TextDocument) { }
 
-  async getDescription(spright: Spright, describeOnlyInput: boolean) {
+  public invalidatePreview() {
+    this.requestedPreview = false;
+  }
+
+  async getDescription(spright: Spright, sheetDescriptionNeeded: boolean, requestPreview: boolean) {
     const config = utils.toNewLineSeparators(this.document.getText());
-    if (this.config != config || this.describeOnlyInput != describeOnlyInput) {
+    if (this.config != config ||
+      (sheetDescriptionNeeded && !this.requestedSheetDescription) ||
+      (requestPreview && !this.requestedPreview)) {
       this.config = config;
-      this.describeOnlyInput = describeOnlyInput;
+      this.requestedSheetDescription = sheetDescriptionNeeded;
+      this.requestedPreview = requestPreview;
       const result = await spright.getDescription(
         this.document.fileName,
         this.config,
-        describeOnlyInput
+        (requestPreview ? "update" : sheetDescriptionNeeded ? "describe" : "describe-input"),
+        (requestPreview ? getPreviewStorageUri(this.context).fsPath : undefined),
       );
       this.diagnostics = parseErrorOutput(this.document, result.stderr);
       if (result.stdout.length > 0) {

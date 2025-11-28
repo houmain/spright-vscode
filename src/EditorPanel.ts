@@ -80,7 +80,7 @@ export class EditorPanel {
           return this.onWebviewInitialized();
 
         case "refreshDescription":
-          this.activeDocument.describeOnlyInput = e.describeOnlyInput;
+          this.activeDocument.sheetDescriptionNeeded = e.sheetDescriptionNeeded;
           return this.activeDocument.validate();
 
         case "complete":

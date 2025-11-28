@@ -57,13 +57,16 @@ export type Slice = {
 };
 
 export type Texture = {
+  sheetIndex: number;
   sliceIndex: number;
   spriteIndices: number[];
   filename: string;
+  path: string;
   width: number;
   height: number;
   map: string;
   scale: number;
+  uri: string;
 };
 
 export type Description = {

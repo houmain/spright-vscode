@@ -70,6 +70,15 @@ export function makeDirectory(directory: string) {
   });
 }
 
+export function removeDirectory(directory: string) {
+  return new Promise<boolean>((resolve, reject) => {
+    fs.rm(directory, { force: true, recursive: true }, (err) => {
+      if (err === null) return resolve(true);
+      resolve(false);
+    });
+  });
+}
+
 export function readTextFile(filename: string) {
   console.log(`Reading '${filename}'`);
   return new Promise<string>((resolve, reject) => {

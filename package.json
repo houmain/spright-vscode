@@ -57,7 +57,11 @@
     "commands": [
       {
         "command": "spright.editor",
-        "title": "Show Spright editor panel"
+        "title": "Show Spright Editor panel"
+      },
+      {
+        "command": "spright.preview",
+        "title": "Show Spright Output panel"
       },
       {
         "command": "spright.build",
@@ -77,6 +81,11 @@
       {
         "command": "spright.editor",
         "key": "Ctrl+Shift+E",
+        "when": "editorLangId == spright"
+      },
+      {
+        "command": "spright.preview",
+        "key": "Ctrl+Shift+O",
         "when": "editorLangId == spright"
       },
       {

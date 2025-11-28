@@ -218,8 +218,8 @@ export class Editor {
       });
     });
 
-    const completeButton = utils.appendElement(itemsDiv, "button", "auto");
-    completeButton.innerText = "auto";
+    const completeButton = utils.appendElement(itemsDiv, "button", "complete");
+    completeButton.innerText = "complete";
     utils.addClickHandler(completeButton, () => {
       this.postMessage({
         type: "autocomplete",
@@ -252,10 +252,11 @@ export class Editor {
     });
     this.applyZoom();
 
-    const showLabel = utils.appendElement(itemsDiv, "label", "show-label");
+    const showDiv = utils.appendElement(itemsDiv, "div", "show");
+    const showLabel = utils.appendElement(showDiv, "label", "show-label");
     showLabel.innerText = "  Show:";
 
-    const showInputTitle = utils.appendCheckbox(itemsDiv, "show-input", "input");
+    const showInputTitle = utils.appendCheckbox(showDiv, "show-input", "input");
     showInputTitle.checked = this.options.showInputTitle;
     utils.addClickHandler(showInputTitle, () => {
       this.options.showInputTitle = showInputTitle.checked;
@@ -263,7 +264,7 @@ export class Editor {
       this.rebuildView();
     });
 
-    const showId = utils.appendCheckbox(itemsDiv, "show-id", "id");
+    const showId = utils.appendCheckbox(showDiv, "show-id", "id");
     showId.checked = this.options.showId;
     utils.addClickHandler(showId, () => {
       this.options.showId = showId.checked;
@@ -271,14 +272,14 @@ export class Editor {
       this.rebuildView();
     });
 
-    const showRect = utils.appendCheckbox(itemsDiv, "show-rect", "rect");
+    const showRect = utils.appendCheckbox(showDiv, "show-rect", "rect");
     showRect.checked = this.options.showRect;
     utils.addClickHandler(showRect, () => {
       this.options.showRect = showRect.checked;
       this.onStateChanged();
     });
 
-    const showPivot = utils.appendCheckbox(itemsDiv, "show-pivot", "pivot");
+    const showPivot = utils.appendCheckbox(showDiv, "show-pivot", "pivot");
     showPivot.checked = this.options.showPivot;
     utils.addClickHandler(showPivot, () => {
       this.options.showPivot = showPivot.checked;
@@ -286,7 +287,7 @@ export class Editor {
       this.refreshDescription(true);
     });
 
-    const showTrimmedRect = utils.appendCheckbox(itemsDiv, "show-trimmed-rect", "trimmed-rect");
+    const showTrimmedRect = utils.appendCheckbox(showDiv, "show-trimmed-rect", "trimmed-rect");
     showTrimmedRect.checked = this.options.showTrimmedRect;
     utils.addClickHandler(showTrimmedRect, () => {
       this.options.showTrimmedRect = showTrimmedRect.checked;
@@ -537,8 +538,8 @@ export class Editor {
 
     if (currentInputType !== "sprite" || isSequenceFilename(input.filename)) {
       utils.appendElement(itemsDiv, "div", "dummy");
-      const autoButton = utils.appendElement(itemsDiv, "button", "auto");
-      autoButton.innerText = "auto";
+      const autoButton = utils.appendElement(itemsDiv, "button", "complete");
+      autoButton.innerText = "complete";
       utils.addClickHandler(autoButton, () => {
         this.postMessage({
           type: "autocomplete",
@@ -572,7 +573,7 @@ export class Editor {
     pivot.setPlaceholder([sprite.pivot?.x, sprite.pivot?.y]);
 
     utils.replaceOrAppendChild(this.properties, itemsDiv);
-    id.focus();
+    id.select();
   }
 
   private rebuildView() {

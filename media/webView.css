@@ -14,6 +14,10 @@ body {
   background: var(--vscode-menu-background);
 }
 
+#toolbar .show {
+  display: inline-block;
+}
+
 #toolbar .items {
   line-height: 30px;
   padding-left: 4px;

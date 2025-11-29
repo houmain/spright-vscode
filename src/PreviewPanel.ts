@@ -113,7 +113,7 @@ export class PreviewPanel {
   private async updateWebview(description: Description) {
     const getUri = (path: string, filename: string) => {
       const uri = this.webviewPanel.webview.asWebviewUri(
-        vscode.Uri.joinPath(vscode.Uri.file(path), filename).with({ query: utils.getNonce() })
+        vscode.Uri.joinPath(vscode.Uri.file(path), filename)
       );
       return `${uri}`;
     };

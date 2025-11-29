@@ -30,7 +30,6 @@ export function replaceOrAppendChild(parent: HTMLElement, child: HTMLElement) {
   const prevChild = parent.getElementsByClassName(child.className).item(0);
   if (prevChild)
     parent.replaceChild(child, prevChild);
-
   else
     parent.appendChild(child);
 }

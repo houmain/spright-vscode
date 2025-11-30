@@ -49,7 +49,7 @@ export class PreviewPanel {
     activeDocument: ActiveDocument
   ) {
     if (this.instance) {
-      this.instance.webviewPanel.reveal(vscode.ViewColumn.Beside, true);
+      this.instance.webviewPanel.reveal(undefined, true);
       return;
     }
     this.instance = new this(context, activeDocument);

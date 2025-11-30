@@ -76,17 +76,17 @@
       {
         "command": "spright.build",
         "key": "Ctrl+Shift+B",
-        "when": "editorLangId == spright || activeWebviewPanelId == spright.editor"
+        "when": "editorLangId == spright || activeWebviewPanelId == spright.editor || activeWebviewPanelId == spright.preview"
       },
       {
         "command": "spright.editor",
         "key": "Ctrl+Shift+E",
-        "when": "editorLangId == spright"
+        "when": "editorLangId == spright || activeWebviewPanelId == spright.preview"
       },
       {
         "command": "spright.preview",
         "key": "Ctrl+Shift+O",
-        "when": "editorLangId == spright"
+        "when": "editorLangId == spright || activeWebviewPanelId == spright.editor"
       },
       {
         "command": "spright.complete",

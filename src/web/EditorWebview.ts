@@ -17,7 +17,6 @@ declare const acquireVsCodeApi: any;
 
   const hideProperties = () => { sprightEditor.hideProperties(); };
   window.addEventListener("resize", hideProperties);
-  window.addEventListener("click", hideProperties);
 
   window.addEventListener("message", (event) => {
     sprightEditor.onMessage(event.data);

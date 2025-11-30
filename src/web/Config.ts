@@ -196,7 +196,7 @@ export class Config {
     let belowLevel = line.level;
     for (let i = subject.lineNo - 1; i >= 0; --i) {
       const parent = this.lines[i];
-      if (parent.level < belowLevel) {
+      if (parent.level <= belowLevel) {
         if (parent.definition == definition) return i;
         belowLevel = parent.level + 1;
       }
@@ -212,9 +212,27 @@ export class Config {
     return this.findCommonPropertyLine(subject, definition) !== undefined;
   }
 
-  public getCommonPropertyParameters(subject: Subject, definition: string) {
+  public getCommonPropertyParameters(subject: Subject, definition: string): ParameterList | undefined {
     const line = this.findCommonPropertyLine(subject, definition);
     if (line) return getLineParameters(line);
+  }
+
+  public getCommonPropertyParameter(subject: Subject, definition: string, index: number): Parameter | undefined {
+    return this.getCommonPropertyParameters(subject, definition)?.at(index);
+  }
+
+  public hasEffectiveProperty(subject: Subject, definition: string) {
+    return this.findPropertyLine(subject, definition) !== undefined ||
+      this.findCommonPropertyLine(subject, definition) !== undefined;
+  }
+
+  public getEffectivePropertyParameters(subject: Subject, definition: string): ParameterList | undefined {
+    const value = this.getPropertyParameters(subject, definition);
+    return (value !== undefined ? value : this.getCommonPropertyParameters(subject, definition));
+  }
+
+  public getEffectivePropertyParameter(subject: Subject, definition: string, index: number): Parameter | undefined {
+    return this.getEffectivePropertyParameters(subject, definition)?.at(index);
   }
 
   public setProperty(

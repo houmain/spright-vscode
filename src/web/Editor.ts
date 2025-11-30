@@ -69,6 +69,9 @@ export class Editor {
     this.properties.addEventListener("dblclick", (e: MouseEvent) => { e.stopPropagation(); });
     this.properties.addEventListener("wheel", (e: WheelEvent) => { e.stopPropagation(); });
 
+    utils.addClickHandler(this.content, (event: MouseEvent) => {
+      this.hideProperties();
+    });
     utils.addRightClickHandler(this.content, (event: MouseEvent) => {
       this.showProperties(event, "Sheet");
       this.rebuildSheetProperties();
@@ -330,7 +333,7 @@ export class Editor {
   }
 
   private bindNumberEditor(editor: utils.NumberEditor, subject: Subject, definition: string) {
-    editor.setValue(this.config.getPropertyParameter(subject, definition, 0));
+    editor.setValue(this.config.getEffectivePropertyParameter(subject, definition, 0));
     utils.addInputHandler(editor.input, () => {
       if (!editor.input.value) {
         this.config.removeProperty(subject, definition);
@@ -343,8 +346,8 @@ export class Editor {
   }
 
   private bindCheckbox(checkbox: HTMLInputElement, subject: Subject, definition: string) {
-    checkbox.checked = (this.config.hasProperty(subject, definition) ?
-      this.config.getPropertyParameter(subject, definition, 0) || "true" : "false") === "true";
+    checkbox.checked = (this.config.hasEffectiveProperty(subject, definition) ?
+      this.config.getEffectivePropertyParameter(subject, definition, 0) || "true" : "false") === "true";
     utils.addInputHandler(checkbox, () => {
       if (!checkbox.checked) {
         this.config.removeProperty(subject, definition);
@@ -357,7 +360,7 @@ export class Editor {
   }
 
   private bindSelect(select: HTMLSelectElement, subject: Subject, definition: string) {
-    select.value = this.config.getPropertyParameter(subject, definition, 0) || "";
+    select.value = this.config.getEffectivePropertyParameter(subject, definition, 0) || "";
     utils.addChangeHandler(select, () => {
       const value = select.item(select.selectedIndex)!.value;
       if (!value) {
@@ -371,7 +374,7 @@ export class Editor {
   }
 
   private bindPairEditor(editor: utils.PairEditor, subject: Subject, definition: string, alwaysSetBoth?: boolean, dontRemoveEmpty?: boolean) {
-    editor.setValue(this.config.getPropertyParameters(subject, definition)!);
+    editor.setValue(this.config.getEffectivePropertyParameters(subject, definition)!);
     editor.addInputHandler((parameters) => {
       if (!dontRemoveEmpty && parameters[0] === "" && parameters[1] === "") {
         this.config.removeProperty(subject, definition);
@@ -389,8 +392,8 @@ export class Editor {
 
   private bindAlternatingPropertyEditor(editor: utils.PairEditor,
     subject: Subject, definitionA: string, definitionB: string) {
-    const valueA = this.config.getPropertyParameters(subject, definitionA)?.at(0);
-    const valueB = this.config.getPropertyParameters(subject, definitionB)?.at(0);
+    const valueA = this.config.getEffectivePropertyParameters(subject, definitionA)?.at(0);
+    const valueB = this.config.getEffectivePropertyParameters(subject, definitionB)?.at(0);
     editor.input1.value = (valueB || valueA || "");
     editor.input2.checked = (valueB !== undefined);
     editor.addInputHandler((parameters) => {
@@ -407,7 +410,7 @@ export class Editor {
   }
 
   private bindRectEditors(posEditor: utils.PairEditor, sizeEditor: utils.PairEditor, subject: Subject, definition: string) {
-    const rect = this.config.getPropertyParameters(subject, definition) || ["0", "0", "1", "1"];
+    const rect = this.config.getEffectivePropertyParameters(subject, definition) || ["0", "0", "1", "1"];
     posEditor.setValue([rect[0], rect[1]]);
     sizeEditor.setValue([rect[2], rect[3]]);
     const setRect = () => {

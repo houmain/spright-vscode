@@ -13,7 +13,8 @@ function getHtmlForWebview(
   const scriptUri = getWebviewPath("out/web", "EditorWebview.js");
   const styleResetUri = getWebviewPath("media", "reset.css");
   const styleVSCodeUri = getWebviewPath("media", "vscode.css");
-  const styleMainUri = getWebviewPath("media", "EditorWebview.css");
+  const styleWebviewUri = getWebviewPath("media", "Webview.css");
+  const stylePanelUri = getWebviewPath("media", "EditorWebview.css");
 
   // Use a nonce to whitelist which scripts can be run
   const nonce = utils.getNonce();
@@ -26,7 +27,8 @@ function getHtmlForWebview(
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <link href="${styleResetUri}" rel="stylesheet" />
       <link href="${styleVSCodeUri}" rel="stylesheet" />
-      <link href="${styleMainUri}" rel="stylesheet" />
+      <link href="${styleWebviewUri}" rel="stylesheet" />
+      <link href="${stylePanelUri}" rel="stylesheet" />
       <title>Spright Configuration Editor</title>
     </head>
     <body>

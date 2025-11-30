@@ -1,16 +1,3 @@
-body {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  margin-left: 1px;
-}
-
-#content {
-  flex: 1;
-  overflow: auto;
-  padding: var(--container-paddding);
-}
-
 .textures {
   margin-top: 3px;
   display: flex;

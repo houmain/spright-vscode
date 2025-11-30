@@ -76,6 +76,10 @@ export class Editor {
       this.showProperties(event, "Sheet");
       this.rebuildSheetProperties();
     });
+    this.content.addEventListener("scroll", () => {
+      if (this.onScrollTimeout) window.clearTimeout(this.onScrollTimeout);
+      this.onScrollTimeout = window.setTimeout(() => this.onStateChanged(), 500);
+    });
 
     this.postMessage({ type: "initialized" });
   }
@@ -155,14 +159,9 @@ export class Editor {
       config: this.config.source,
       description: this.description,
       options: this.options,
-      scrollX: window.scrollX,
-      scrollY: window.scrollY,
+      scrollX: this.content.scrollLeft,
+      scrollY: this.content.scrollTop,
     } as State);
-  }
-
-  public onScrolled() {
-    if (this.onScrollTimeout) window.clearTimeout(this.onScrollTimeout);
-    this.onScrollTimeout = window.setTimeout(() => this.onStateChanged(), 500);
   }
 
   public onFilterChanged() {
@@ -182,7 +181,7 @@ export class Editor {
     this.applyZoom();
     this.rebuildToolbar();
     this.rebuildView();
-    window.scrollTo(state.scrollX, state.scrollY);
+    this.content.scrollTo(state.scrollX, state.scrollY);
   }
 
   private refreshDescription(force?: boolean) {
@@ -610,8 +609,8 @@ export class Editor {
       });
 
       if (this.options.showInputFilename) {
-        const filenameDiv = utils.appendElement(inputDiv, "div", "filename");
-        const textDiv = utils.appendElement(filenameDiv, "div", "text");
+        const titleDiv = utils.appendElement(inputDiv, "div", "title");
+        const textDiv = utils.appendElement(titleDiv, "div", "text");
         textDiv.innerText = input.filename;
       }
       else {

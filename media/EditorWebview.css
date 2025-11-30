@@ -22,15 +22,6 @@
   border: 1px solid #0055ff9b;
 }
 
-.text {
-  font-size: 1em;
-}
-
-.title .text {
-  display: inline;
-  padding-left: 4px;
-}
-
 .sources {
   margin-top: 3px;
   display: flex;

@@ -8,6 +8,11 @@ export type Input = {
   sourceSprites: SourceSprites[];
 };
 
+export type Output = {
+  filename: string;
+  textureIndices: number[];
+};
+
 export type Source = {
   filename: string;
   path: string;
@@ -50,6 +55,7 @@ export type Sprite = {
 
 export type Sheet = {
   slices: Slice[];
+  outputs: Output[];
 };
 
 export type Slice = {

@@ -15,20 +15,12 @@ declare const acquireVsCodeApi: any;
     (message: any) => vscode.postMessage(message)
   );
 
-  const hideProperties = () => { sprightPreview.hideProperties(); };
-  window.addEventListener("resize", hideProperties);
-  window.addEventListener("click", hideProperties);
-
   window.addEventListener("message", (event) => {
     sprightPreview.onMessage(event.data);
   });
 
   window.addEventListener("wheel", (event) => {
     if (event.ctrlKey) sprightPreview.changeZoom(-Math.sign(event.deltaY));
-  });
-
-  window.addEventListener("scroll", (event) => {
-    sprightPreview.onScrolled();
   });
 
   // Webviews are normally torn down when not visible and re-created when they become visible again.

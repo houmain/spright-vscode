@@ -98,3 +98,12 @@ body {
   overflow: auto;
   padding: var(--container-paddding);
 }
+
+.text {
+  font-size: 1em;
+}
+
+.title .text {
+  display: inline;
+  padding-left: 4px;
+}

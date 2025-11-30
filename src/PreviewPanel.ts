@@ -124,7 +124,7 @@ export class PreviewPanel {
 
     this.webviewPanel.webview.postMessage({
       type: "setDescription",
-      textures: description.textures,
+      description,
     });
   }
 }

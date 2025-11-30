@@ -36,10 +36,6 @@ declare const acquireVsCodeApi: any;
     if (event.ctrlKey) sprightEditor.changeZoom(-Math.sign(event.deltaY));
   });
 
-  window.addEventListener("scroll", (event) => {
-    sprightEditor.onScrolled();
-  });
-
   // Webviews are normally torn down when not visible and re-created when they become visible again.
   // State lets us save information across these re-loads
   const state = vscode.getState();

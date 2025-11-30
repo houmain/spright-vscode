@@ -13,7 +13,7 @@ type Options = {
   showRect: boolean;
   showPivot: boolean;
   showTrimmedRect: boolean;
-  showInputTitle: boolean;
+  showInputFilename: boolean;
 };
 
 type State = {
@@ -52,7 +52,7 @@ export class Editor {
     this.options = {
       showId: true,
       showRect: true,
-      showInputTitle: true,
+      showInputFilename: true,
       zoomLevel: 2,
     } as Options;
 
@@ -259,10 +259,10 @@ export class Editor {
     const showLabel = utils.appendElement(showDiv, "label", "show-label");
     showLabel.innerText = "  Show:";
 
-    const showInputTitle = utils.appendCheckbox(showDiv, "show-input", "input");
-    showInputTitle.checked = this.options.showInputTitle;
-    utils.addClickHandler(showInputTitle, () => {
-      this.options.showInputTitle = showInputTitle.checked;
+    const showInputFilename = utils.appendCheckbox(showDiv, "show-filename", "filename");
+    showInputFilename.checked = this.options.showInputFilename;
+    utils.addClickHandler(showInputFilename, () => {
+      this.options.showInputFilename = showInputFilename.checked;
       this.onStateChanged();
       this.rebuildView();
     });
@@ -609,9 +609,9 @@ export class Editor {
         });
       });
 
-      if (this.options.showInputTitle) {
-        const titleDiv = utils.appendElement(inputDiv, "div", "title");
-        const textDiv = utils.appendElement(titleDiv, "div", "text");
+      if (this.options.showInputFilename) {
+        const filenameDiv = utils.appendElement(inputDiv, "div", "filename");
+        const textDiv = utils.appendElement(filenameDiv, "div", "text");
         textDiv.innerText = input.filename;
       }
       else {

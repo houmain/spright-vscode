@@ -1,11 +1,17 @@
 
 import * as utils from "./utils";
 import { Config, Sheet as ConfigSheet, Input as ConfigInput, Sprite as ConfigSprite, Subject } from "./Config";
-import { Description, Input, Sprite } from "./Description";
+import { Description, Input, Sprite, Point } from "./Description";
 
 const zoomLevels = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 8, 10];
 
+enum EditorType {
+  Input,
+  Output,
+}
+
 type Options = {
+  editorType: EditorType;
   sheetIndex: number;
   zoomLevel: number;
   filter?: string;
@@ -29,8 +35,8 @@ function isSequenceFilename(filename: string) {
 }
 
 export class Editor {
-  private config: Config;
-  private description: Description;
+  private config = new Config("");
+  private description = {} as Description;
   private options: Options;
   private filter!: HTMLInputElement;
   private zoom!: HTMLSelectElement;
@@ -39,6 +45,8 @@ export class Editor {
   private cachedElementsNew: Map<any, HTMLElement> = new Map();
   private onFilterChangedTimeout?: number;
   private onScrollTimeout?: number;
+  private nextRefreshQuery = 0;
+  private preload: HTMLElement;
 
   constructor(
     private toolbar: HTMLElement,
@@ -47,14 +55,19 @@ export class Editor {
     private updateState: any,
     private postMessage: any
   ) {
-    this.config = new Config("");
-    this.description = {} as Description;
+
     this.options = {
+      editorType: EditorType.Input,
       showId: true,
       showRect: true,
       showInputFilename: true,
       zoomLevel: 2,
     } as Options;
+
+    this.preload = utils.appendElement(this.properties, "div", "preload");
+    this.preload.style.width = "0px";
+    this.preload.style.height = "0px";
+    this.preload.style.overflow = "hidden";
 
     const html = this.content.parentElement!.parentElement!;
     utils.addDoubleClickHandler(html, () => {
@@ -109,9 +122,13 @@ export class Editor {
 
   public onMessage(message: any) {
     switch (message.type) {
+      case "setEditorType":
+        this.options.editorType = message.editorType;
+        break;
+
       case "setConfig":
         this.setConfig(message.config, message.description);
-        return;
+        break;
     }
   }
 
@@ -220,13 +237,15 @@ export class Editor {
       });
     });
 
-    const completeButton = utils.appendElement(itemsDiv, "button", "complete");
-    completeButton.innerText = "complete";
-    utils.addClickHandler(completeButton, () => {
-      this.postMessage({
-        type: "complete",
+    if (this.options.editorType == EditorType.Input) {
+      const completeButton = utils.appendElement(itemsDiv, "button", "complete");
+      completeButton.innerText = "complete";
+      utils.addClickHandler(completeButton, () => {
+        this.postMessage({
+          type: "complete",
+        });
       });
-    });
+    }
 
     this.sheet = utils.appendSelect(itemsDiv, "sheet", "  Sheet: ");
     for (let i = 0; i < this.config.sheets.length; ++i) {
@@ -239,10 +258,12 @@ export class Editor {
       this.onStateChanged();
     });
 
-    this.filter = utils.appendTextbox(itemsDiv, "filter", "  Filter:");
-    this.filter.type = "search";
-    utils.addInputHandler(this.filter, () => { this.onFilterChanged(); });
-    this.filter.value = this.options.filter || "";
+    if (this.options.editorType == EditorType.Input) {
+      this.filter = utils.appendTextbox(itemsDiv, "filter", "  Filter:");
+      this.filter.type = "search";
+      utils.addInputHandler(this.filter, () => { this.onFilterChanged(); });
+      this.filter.value = this.options.filter || "";
+    }
 
     this.zoom = utils.appendSelect(itemsDiv, "zoom", "  Zoom:");
     for (const level of zoomLevels)
@@ -281,18 +302,18 @@ export class Editor {
       this.onStateChanged();
     });
 
-    const showPivot = utils.appendCheckbox(showDiv, "show-pivot", "pivot");
-    showPivot.checked = this.options.showPivot;
-    utils.addClickHandler(showPivot, () => {
-      this.options.showPivot = showPivot.checked;
-      this.onStateChanged();
-      this.refreshDescription(true);
-    });
-
     const showTrimmedRect = utils.appendCheckbox(showDiv, "show-trimmed-rect", "trimmed-rect");
     showTrimmedRect.checked = this.options.showTrimmedRect;
     utils.addClickHandler(showTrimmedRect, () => {
       this.options.showTrimmedRect = showTrimmedRect.checked;
+      this.onStateChanged();
+      this.refreshDescription(true);
+    });
+
+    const showPivot = utils.appendCheckbox(showDiv, "show-pivot", "pivot");
+    showPivot.checked = this.options.showPivot;
+    utils.addClickHandler(showPivot, () => {
+      this.options.showPivot = showPivot.checked;
       this.onStateChanged();
       this.refreshDescription(true);
     });
@@ -579,6 +600,13 @@ export class Editor {
   }
 
   private rebuildView() {
+    if (this.options.editorType == EditorType.Input)
+      this.rebuildInputView();
+    else
+      this.rebuildOutputView();
+  }
+
+  private rebuildInputView() {
     const begin = Date.now();
     const inputsDiv = utils.createElement("div", "inputs");
 
@@ -632,7 +660,6 @@ export class Editor {
   }
 
   private createSourceDiv(input: Input, configInput?: ConfigInput): HTMLElement {
-    let spriteIndex = 0;
     const sourcesDiv = utils.createElement("div", "sources");
     for (const sourceSprites of input.sourceSprites) {
       const source = this.description.sources[sourceSprites.sourceIndex];
@@ -657,50 +684,121 @@ export class Editor {
       const spritesDiv = utils.appendElement(sourceFrameDiv, "div", "sprites");
       for (const index of sourceSprites.spriteIndices) {
         const sprite = this.description.sprites[index];
-        const configSprite = configInput?.sprites[spriteIndex++];
-
-        if (this.options.showTrimmedRect && sprite.trimmedSourceRect) {
-          utils.appendRect(spritesDiv, sprite.trimmedSourceRect, "trimmed-rect");
-        }
-
-        const spriteDiv = utils.appendRect(spritesDiv, sprite.sourceRect,
-          configSprite ? "sprite" : "sprite deduced");
-        spriteDiv.title = sprite.id;
-
-        if (this.options.showPivot &&
-          sprite.pivot &&
-          sprite.trimmedSourceRect &&
-          sprite.rect &&
-          sprite.trimmedRect) {
-          const rx = sprite.trimmedSourceRect.x +
-            (sprite.rect.x - sprite.trimmedRect.x);
-          const ry = sprite.trimmedSourceRect.y +
-            (sprite.rect.y - sprite.trimmedRect.y);
-          const pivotDiv = utils.appendElement(spritesDiv, "div", "pivot");
-          pivotDiv.style.setProperty("--x", rx + sprite.pivot.x + "px");
-          pivotDiv.style.setProperty("--y", ry + sprite.pivot.y + "px");
-        }
-        if (this.options.showId) {
-          const textDiv = utils.appendElement(spriteDiv, "div", "text");
-          textDiv.innerText = sprite.id;
-        }
-
-        if (configSprite) {
-          utils.addRightClickHandler(spriteDiv, (event: MouseEvent) => {
-            this.showProperties(event, "Sprite");
-            this.rebuildSpriteProperties(sprite, configSprite, configInput);
-          });
-          utils.addClickHandler(spriteDiv, () => {
-            this.hideProperties();
-            this.postMessage({
-              type: "selectLine",
-              lineNo: configSprite.lineNo,
-              columnNo: this.config.getParameterColumn(configSprite),
-            });
-          });
-        }
+        this.createSprite(sprite, spritesDiv);
       }
     }
     return sourcesDiv;
+  }
+
+  private rebuildOutputView() {
+    const outputsDiv = utils.createElement("div", "outputs");
+    const refreshQuery = this.nextRefreshQuery++;
+
+    for (const sheet of this.description.sheets)
+      for (const output of sheet.outputs) {
+        const outputDiv = utils.appendElement(outputsDiv, "div", "output");
+
+        const minSize: Point = { x: 0, y: 0 };
+        const maxSize: Point = { x: 0, y: 0 };
+        for (const textureIndex of output.textureIndices) {
+          const texture = this.description.textures[textureIndex];
+          if (!minSize.x || texture.width < minSize.x) minSize.x = texture.width;
+          if (!minSize.y || texture.height < minSize.y) minSize.y = texture.height;
+          if (texture.width > maxSize.x) maxSize.x = texture.width;
+          if (texture.height > maxSize.y) maxSize.y = texture.height;
+        }
+
+        let sizeString = "";
+        if (output.textureIndices.length > 1)
+          sizeString += `${output.textureIndices.length} x `;
+        sizeString += `${minSize.x}x${minSize.y}`;
+        if (minSize.x != maxSize.x || minSize.y != maxSize.y)
+          sizeString += ` - ${maxSize.x}x${maxSize.y}`;
+        const title = `${output.filename} (${sizeString})`;
+
+        if (this.options.showInputFilename) {
+          const titleDiv = utils.appendElement(outputDiv, "div", "title");
+          const textDiv = utils.appendElement(titleDiv, "div", "text");
+          textDiv.innerText = title;
+        }
+        else {
+          outputDiv.title = title;
+        }
+
+        const texturesDiv = utils.appendElement(outputDiv, "div", "textures");
+        for (const textureIndex of output.textureIndices) {
+          const texture = this.description.textures[textureIndex];
+          const textureDiv = utils.appendElement(texturesDiv, "div", "texture");
+          const textureFrameDiv = utils.appendElement(textureDiv, "div", "frame");
+          const textureImageDiv = utils.appendElement(textureFrameDiv, "div", "image");
+          textureImageDiv.style.setProperty("--filename", `url('${texture.uri}?${refreshQuery}'`);
+          textureImageDiv.style.setProperty("--width", texture.width + "px");
+          textureImageDiv.style.setProperty("--height", texture.height + "px");
+
+          const spritesDiv = utils.appendElement(textureFrameDiv, "div", "sprites");
+          for (const index of texture.spriteIndices) {
+            const sprite = this.description.sprites[index];
+            this.createSprite(sprite, spritesDiv);
+          }
+        }
+      }
+
+    // in order to prevent flickering, add to preload div first and switch after some time
+    this.preload.appendChild(outputsDiv);
+    setTimeout(() => {
+      utils.replaceOrAppendChild(this.content, outputsDiv);
+    }, 100);
+  }
+
+  private createSprite(sprite: Sprite, spritesDiv: HTMLElement) {
+    const configInput = this.config.inputs[sprite.inputIndex];
+    const configSprite = configInput.sprites[sprite.inputSpriteIndex];
+
+    const isInput = (this.options.editorType == EditorType.Input);
+    const rect = (isInput ? sprite.sourceRect : sprite.rect)!;
+    const trimmedRect = (isInput ? sprite.trimmedSourceRect : sprite.trimmedRect);
+
+    if (this.options.showTrimmedRect && trimmedRect)
+      utils.appendRect(spritesDiv, trimmedRect, "trimmed-rect");
+
+    const spriteDiv = utils.appendRect(spritesDiv, rect,
+      configSprite ? "sprite" : "sprite deduced");
+    spriteDiv.title = sprite.id;
+
+    if (this.options.showPivot &&
+      sprite.pivot &&
+      trimmedRect &&
+      sprite.rect &&
+      sprite.trimmedRect) {
+      let px = trimmedRect.x + sprite.pivot.x;
+      let py = trimmedRect.y + sprite.pivot.y;
+      if (isInput) {
+        px += (sprite.rect.x - sprite.trimmedRect.x);
+        py += (sprite.rect.y - sprite.trimmedRect.y);
+      }
+      const pivotDiv = utils.appendElement(spritesDiv, "div", "pivot");
+      pivotDiv.style.setProperty("--x", px + "px");
+      pivotDiv.style.setProperty("--y", py + "px");
+    }
+
+    if (this.options.showId) {
+      const textDiv = utils.appendElement(spriteDiv, "div", "text");
+      textDiv.innerText = sprite.id;
+    }
+
+    if (configSprite) {
+      utils.addRightClickHandler(spriteDiv, (event: MouseEvent) => {
+        this.showProperties(event, "Sprite");
+        this.rebuildSpriteProperties(sprite, configSprite, configInput);
+      });
+      utils.addClickHandler(spriteDiv, () => {
+        this.hideProperties();
+        this.postMessage({
+          type: "selectLine",
+          lineNo: configSprite.lineNo,
+          columnNo: this.config.getParameterColumn(configSprite),
+        });
+      });
+    }
   }
 }

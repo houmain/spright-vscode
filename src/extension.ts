@@ -5,9 +5,8 @@ import { SprightCompletionItemProvider } from "./CompletionItemProvider";
 import { DocumentDropEditProvider } from "./DocumentDropEditProvider";
 import { SettingsProvider } from "./SettingsProvider";
 import { SprightProvider } from "./SprightProvider";
-import { EditorPanel } from "./EditorPanel";
+import { EditorPanel, EditorType } from "./EditorPanel";
 import { ActiveDocument } from "./ActiveDocument";
-import { PreviewPanel } from "./PreviewPanel";
 
 export function activate(context: vscode.ExtensionContext) {
   const selector = [
@@ -53,14 +52,14 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("spright.editor", () => {
-      return EditorPanel.createOrShow(context, activeDocument);
+    vscode.commands.registerCommand("spright.input", () => {
+      return EditorPanel.createOrShow(context, activeDocument, EditorType.Input);
     })
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("spright.preview", async () => {
-      return PreviewPanel.createOrShow(context, activeDocument);
+    vscode.commands.registerCommand("spright.output", async () => {
+      return EditorPanel.createOrShow(context, activeDocument, EditorType.Output);
     })
   );
 }

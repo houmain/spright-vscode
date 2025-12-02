@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as utils from "./utils";
 import { Description } from "./web/Description";
 import { ActiveDocument, ActiveDocumentChangeEvent } from "./ActiveDocument";
+import { getPreviewStorageUri } from "./extension";
 
 function getHtmlForWebview(
   extensionUri: vscode.Uri,
@@ -13,8 +14,7 @@ function getHtmlForWebview(
   const scriptUri = getWebviewPath("out/web", "EditorWebview.js");
   const styleResetUri = getWebviewPath("media", "reset.css");
   const styleVSCodeUri = getWebviewPath("media", "vscode.css");
-  const styleWebviewUri = getWebviewPath("media", "Webview.css");
-  const stylePanelUri = getWebviewPath("media", "EditorWebview.css");
+  const styleWebviewUri = getWebviewPath("media", "EditorWebview.css");
 
   // Use a nonce to whitelist which scripts can be run
   const nonce = utils.getNonce();
@@ -28,7 +28,6 @@ function getHtmlForWebview(
       <link href="${styleResetUri}" rel="stylesheet" />
       <link href="${styleVSCodeUri}" rel="stylesheet" />
       <link href="${styleWebviewUri}" rel="stylesheet" />
-      <link href="${stylePanelUri}" rel="stylesheet" />
       <title>Spright Configuration Editor</title>
     </head>
     <body>
@@ -40,41 +39,63 @@ function getHtmlForWebview(
     </html>`;
 }
 
+export enum EditorType {
+  Input,
+  Output,
+}
+
 export class EditorPanel {
-  private static instance?: EditorPanel;
+  private static instances: any = [];
 
   private readonly webviewPanel: vscode.WebviewPanel;
 
   public static createOrShow(
     context: vscode.ExtensionContext,
-    activeDocument: ActiveDocument
+    activeDocument: ActiveDocument,
+    editorType: EditorType,
   ) {
-    if (this.instance) {
-      this.instance.webviewPanel.reveal(undefined, true);
+    if (this.instances[editorType]) {
+      this.instances[editorType].webviewPanel.reveal(undefined, true);
       return;
     }
-    this.instance = new this(context, activeDocument);
+    this.instances[editorType] = new this(context, activeDocument, editorType);
   }
 
   private constructor(
-    context: vscode.ExtensionContext,
-    private activeDocument: ActiveDocument
+    private context: vscode.ExtensionContext,
+    private activeDocument: ActiveDocument,
+    private editorType: EditorType
   ) {
+
+    const resourceRoots: vscode.Uri[] = [
+      context.extensionUri,
+      getPreviewStorageUri(context)
+    ];
+    if (vscode.workspace.workspaceFolders)
+      for (const folder of vscode.workspace.workspaceFolders)
+        resourceRoots.push(folder.uri);
+
     this.webviewPanel = vscode.window.createWebviewPanel(
-      "spright.editor",
-      "Spright Editor",
+      (editorType == EditorType.Input ? "spright.input" : "spright.output"),
+      (editorType == EditorType.Input ? "Spright Input" : "Spright Output"),
       {
         viewColumn: vscode.ViewColumn.Beside,
         preserveFocus: true,
       },
       {
         enableScripts: true,
+        localResourceRoots: resourceRoots
       }
     );
     this.webviewPanel.webview.html = getHtmlForWebview(
       context.extensionUri,
       this.webviewPanel.webview
     );
+
+    this.webviewPanel.webview.postMessage({
+      type: "setEditorType",
+      editorType: editorType,
+    });
 
     this.webviewPanel.webview.onDidReceiveMessage(async (e) => {
       switch (e.type) {
@@ -105,14 +126,22 @@ export class EditorPanel {
     });
   }
 
-  onWebviewInitialized() {
+  async onWebviewInitialized() {
+    if (this.editorType == EditorType.Output) {
+      await utils.makeDirectory(getPreviewStorageUri(this.context).fsPath);
+      await this.activeDocument.requestPreview(true);
+    }
     const activeDocumentChangedSubscription = this.activeDocument.onChanged(
       this.onActiveDocumentChanged.bind(this)
     );
 
-    this.webviewPanel.onDidDispose(() => {
+    this.webviewPanel.onDidDispose(async () => {
       activeDocumentChangedSubscription.dispose();
-      EditorPanel.instance = undefined;
+      EditorPanel.instances[this.editorType] = undefined;
+      if (this.editorType == EditorType.Output) {
+        await this.activeDocument.requestPreview(false);
+        await utils.removeDirectory(getPreviewStorageUri(this.context).fsPath);
+      }
     });
   }
 
@@ -125,14 +154,25 @@ export class EditorPanel {
     description: Description,
     config: string
   ) {
-    const getUri = (path: string, filename: string) => {
+    // TODO: merge
+    const getSourceUri = (path: string, filename: string) => {
       const uri = this.webviewPanel.webview.asWebviewUri(
         vscode.Uri.joinPath(document.uri, "/../", path, filename)
       );
       return `${uri}`;
     };
+    const getTextureUri = (path: string, filename: string) => {
+      const uri = this.webviewPanel.webview.asWebviewUri(
+        vscode.Uri.joinPath(vscode.Uri.file(path), filename)
+      );
+      return `${uri}`;
+    };
+
     for (const source of description.sources)
-      source.uri = getUri(source.path, source.filename);
+      source.uri = getSourceUri(source.path, source.filename);
+
+    for (const texture of description.textures)
+      texture.uri = getTextureUri(texture.path, texture.filename);
 
     this.webviewPanel.webview.postMessage({
       type: "setConfig",

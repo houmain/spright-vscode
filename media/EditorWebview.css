@@ -1,3 +1,114 @@
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin-left: 1px;
+  overflow: hidden;
+}
+
+#toolbar {
+  user-select: none;
+  margin: 0;
+  width: 100%;
+  color: var(--vscode-menu-foreground);
+  border-bottom: 1px solid var(--vscode-menu-border);
+  background: var(--vscode-menu-background);
+}
+
+#toolbar .show {
+  display: inline-block;
+}
+
+#toolbar .items {
+  line-height: 30px;
+  padding-left: 4px;
+}
+
+#toolbar .items * {
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+#toolbar input[type="text"] {
+  margin-left: 4px;
+  width: 100px;
+}
+
+#toolbar input[type="search"] {
+  margin-left: 4px;
+  width: 100px;
+}
+
+#toolbar input[type="checkbox"] {
+  margin-left: 4px;
+}
+
+#properties {
+  visibility: hidden;
+  user-select: none;
+  position: absolute;
+  margin: 0;
+  z-index: 30;
+  padding: 8px;
+  padding-top: 0px;
+  color: var(--vscode-menu-foreground);
+  border-radius: 5px;
+  border: 1px solid var(--vscode-menu-border);
+  background: var(--vscode-menu-background);
+  filter: drop-shadow(4px 4px 4px #00000033);
+}
+
+#properties .title {
+  text-transform: uppercase;
+  font-size: 0.8em;
+  font-weight: bold;
+  opacity: 0.7;
+}
+
+#properties input[type="checkbox"] {
+  justify-self: left;
+}
+
+#properties .items {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  padding-left: 4px;
+  padding-bottom: 4px;
+}
+
+#properties .items>* {
+  margin-right: 4px;
+  margin-top: 4px;
+}
+
+#properties label {
+  justify-self: end;
+}
+
+#properties input[type="number"] {
+  max-width: 60px;
+}
+
+#properties .pair-2 {
+  margin-left: 6px;
+}
+
+#content {
+  flex: 1;
+  overflow: auto;
+  padding: var(--container-paddding);
+}
+
+.text {
+  font-size: 1em;
+}
+
+.title .text {
+  display: inline;
+  padding-left: 4px;
+}
+
 .inputs {
   user-select: none;
   display: flex;
@@ -102,4 +213,50 @@ body.vscode-dark .source .frame {
   border-radius: 100%;
   background-color: rgba(255, 255, 0, 0.5);
   border: 1px solid black;
+}
+
+.outputs {
+  user-select: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-top: 4px;
+  margin-left: 4px;
+  gap: 10px;
+  --pivot-size: calc(var(--zoom) * 2px);
+}
+
+.output {
+  position: relative;
+  background-color: var(--vscode-titleBar-activeBackground);
+  color: var(--vscode-titleBar-activeForeground);
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 5px;
+  padding: 6px;
+}
+
+.textures {
+  margin-top: 3px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.texture {
+  position: relative;
+}
+
+.texture .frame {
+  position: relative;
+  display: inline-block;
+  border: 1px solid gray;
+  background: repeating-conic-gradient(#eee 0% 25%, #ddd 0% 50%) 50% / 16px 16px;
+}
+
+.texture .image {
+  background-image: var(--filename);
+  background-size: cover;
+  image-rendering: pixelated;
+  width: calc(var(--width) * var(--zoom));
+  height: calc(var(--height) * var(--zoom));
 }

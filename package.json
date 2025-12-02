@@ -56,11 +56,11 @@
     ],
     "commands": [
       {
-        "command": "spright.editor",
-        "title": "Show Spright Editor panel"
+        "command": "spright.input",
+        "title": "Show Spright Input panel"
       },
       {
-        "command": "spright.preview",
+        "command": "spright.output",
         "title": "Show Spright Output panel"
       },
       {
@@ -76,22 +76,22 @@
       {
         "command": "spright.build",
         "key": "Ctrl+Shift+B",
-        "when": "editorLangId == spright || activeWebviewPanelId == spright.editor || activeWebviewPanelId == spright.preview"
+        "when": "editorLangId == spright || activeWebviewPanelId == spright.input || activeWebviewPanelId == spright.output"
       },
       {
-        "command": "spright.editor",
-        "key": "Ctrl+Shift+E",
-        "when": "editorLangId == spright || activeWebviewPanelId == spright.preview"
+        "command": "spright.input",
+        "key": "Ctrl+Shift+I",
+        "when": "editorLangId == spright || activeWebviewPanelId == spright.output"
       },
       {
-        "command": "spright.preview",
+        "command": "spright.output",
         "key": "Ctrl+Shift+O",
-        "when": "editorLangId == spright || activeWebviewPanelId == spright.editor"
+        "when": "editorLangId == spright || activeWebviewPanelId == spright.input"
       },
       {
         "command": "spright.complete",
         "key": "Ctrl+Shift+C",
-        "when": "editorLangId == spright || activeWebviewPanelId == spright.editor"
+        "when": "editorLangId == spright || activeWebviewPanelId == spright.input"
       }
     ],
     "configuration": [

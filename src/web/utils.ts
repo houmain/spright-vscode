@@ -34,12 +34,12 @@ export function replaceOrAppendChild(parent: HTMLElement, child: HTMLElement) {
     parent.appendChild(child);
 }
 
-export function appendRect(parent: HTMLElement, rect: Rect, className: string) {
+export function appendRect(parent: HTMLElement, rect: Rect, className: string, rotated?: boolean) {
   const rectDiv = appendElement(parent, "div", className);
   rectDiv.style.setProperty("--rect_x", rect.x + "px");
   rectDiv.style.setProperty("--rect_y", rect.y + "px");
-  rectDiv.style.setProperty("--rect_w", rect.w + "px");
-  rectDiv.style.setProperty("--rect_h", rect.h + "px");
+  rectDiv.style.setProperty("--rect_w", (rotated ? rect.h : rect.w) + "px");
+  rectDiv.style.setProperty("--rect_h", (rotated ? rect.w : rect.h) + "px");
   return rectDiv;
 }
 

@@ -749,17 +749,17 @@ export class Editor {
 
   private createSprite(sprite: Sprite, spritesDiv: HTMLElement) {
     const configInput = this.config.inputs[sprite.inputIndex];
-    const configSprite = configInput.sprites[sprite.inputSpriteIndex];
+    const configSprite = configInput?.sprites[sprite.inputSpriteIndex];
 
     const isInput = (this.editorType == EditorType.Input);
     const rect = (isInput ? sprite.sourceRect : sprite.rect)!;
     const trimmedRect = (isInput ? sprite.trimmedSourceRect : sprite.trimmedRect);
 
     if (this.options.showTrimmedRect && trimmedRect)
-      utils.appendRect(spritesDiv, trimmedRect, "trimmed-rect");
+      utils.appendRect(spritesDiv, trimmedRect, "trimmed-rect", !isInput && sprite.rotated);
 
     const spriteDiv = utils.appendRect(spritesDiv, rect,
-      configSprite ? "sprite" : "sprite deduced");
+      configSprite ? "sprite" : "sprite deduced", !isInput && sprite.rotated);
     spriteDiv.title = sprite.id;
 
     if (this.options.showPivot &&

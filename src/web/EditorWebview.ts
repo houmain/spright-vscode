@@ -1,13 +1,16 @@
+
 import { Editor } from "./Editor";
 
 declare const acquireVsCodeApi: any;
 
 (function () {
   const vscode = acquireVsCodeApi();
+  const editorType = document.body.dataset["editorType"];
   const toolbar = document.querySelector("#toolbar") as HTMLElement;
   const content = document.querySelector("#content") as HTMLElement;
   const properties = document.querySelector("#properties") as HTMLElement;
   const sprightEditor = new Editor(
+    Number(editorType),
     toolbar,
     content,
     properties,

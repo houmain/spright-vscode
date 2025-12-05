@@ -5,6 +5,7 @@ import { ActiveDocument, ActiveDocumentChangeEvent } from "./ActiveDocument";
 import { getPreviewStorageUri } from "./extension";
 
 function getHtmlForWebview(
+  editorType: EditorType,
   extensionUri: vscode.Uri,
   webview: vscode.Webview
 ): string {
@@ -30,7 +31,7 @@ function getHtmlForWebview(
       <link href="${styleWebviewUri}" rel="stylesheet" />
       <title>Spright Configuration Editor</title>
     </head>
-    <body>
+    <body data-editor-type="${editorType}">
       <div id="toolbar" data-vscode-context='{ "webviewSection": "toolbar" }'></div>
       <div id="content" data-vscode-context='{ "webviewSection": "content" }'></div>
       <div id="properties" data-vscode-context='{ "webviewSection": "properties" }'></div>
@@ -48,17 +49,18 @@ export class EditorPanel {
   private static instances: any = [];
 
   private readonly webviewPanel: vscode.WebviewPanel;
+  private activeDocumentChangedSubscription: vscode.Disposable | undefined;
 
   public static createOrShow(
     context: vscode.ExtensionContext,
     activeDocument: ActiveDocument,
     editorType: EditorType,
   ) {
-    if (this.instances[editorType]) {
-      this.instances[editorType].webviewPanel.reveal(undefined, true);
+    if (EditorPanel.instances[editorType]) {
+      EditorPanel.instances[editorType].webviewPanel.reveal(undefined, true);
       return;
     }
-    this.instances[editorType] = new this(context, activeDocument, editorType);
+    EditorPanel.instances[editorType] = new this(context, activeDocument, editorType);
   }
 
   private constructor(
@@ -66,7 +68,6 @@ export class EditorPanel {
     private activeDocument: ActiveDocument,
     private editorType: EditorType
   ) {
-
     const resourceRoots: vscode.Uri[] = [
       context.extensionUri,
       getPreviewStorageUri(context)
@@ -87,14 +88,14 @@ export class EditorPanel {
         localResourceRoots: resourceRoots
       }
     );
-    this.webviewPanel.webview.html = getHtmlForWebview(
-      context.extensionUri,
-      this.webviewPanel.webview
-    );
 
-    this.webviewPanel.webview.postMessage({
-      type: "setEditorType",
-      editorType: editorType,
+    this.webviewPanel.onDidDispose(async () => {
+      EditorPanel.instances[this.editorType] = undefined;
+
+      if (this.activeDocumentChangedSubscription)
+        this.activeDocumentChangedSubscription.dispose();
+
+      return this.onWebviewDisposed();
     });
 
     this.webviewPanel.webview.onDidReceiveMessage(async (e) => {
@@ -124,6 +125,12 @@ export class EditorPanel {
           );
       }
     });
+
+    this.webviewPanel.webview.html = getHtmlForWebview(
+      this.editorType,
+      context.extensionUri,
+      this.webviewPanel.webview
+    );
   }
 
   async onWebviewInitialized() {
@@ -131,18 +138,16 @@ export class EditorPanel {
       await utils.makeDirectory(getPreviewStorageUri(this.context).fsPath);
       await this.activeDocument.requestPreview(true);
     }
-    const activeDocumentChangedSubscription = this.activeDocument.onChanged(
+    this.activeDocumentChangedSubscription = this.activeDocument.onChanged(
       this.onActiveDocumentChanged.bind(this)
     );
+  }
 
-    this.webviewPanel.onDidDispose(async () => {
-      activeDocumentChangedSubscription.dispose();
-      EditorPanel.instances[this.editorType] = undefined;
-      if (this.editorType == EditorType.Output) {
-        await this.activeDocument.requestPreview(false);
-        await utils.removeDirectory(getPreviewStorageUri(this.context).fsPath);
-      }
-    });
+  async onWebviewDisposed() {
+    if (this.editorType == EditorType.Output) {
+      await this.activeDocument.requestPreview(false);
+      await utils.removeDirectory(getPreviewStorageUri(this.context).fsPath);
+    }
   }
 
   onActiveDocumentChanged(event: ActiveDocumentChangeEvent) {
@@ -154,25 +159,17 @@ export class EditorPanel {
     description: Description,
     config: string
   ) {
-    // TODO: merge
-    const getSourceUri = (path: string, filename: string) => {
-      const uri = this.webviewPanel.webview.asWebviewUri(
-        vscode.Uri.joinPath(document.uri, "/../", path, filename)
-      );
-      return `${uri}`;
-    };
-    const getTextureUri = (path: string, filename: string) => {
-      const uri = this.webviewPanel.webview.asWebviewUri(
-        vscode.Uri.joinPath(vscode.Uri.file(path), filename)
-      );
-      return `${uri}`;
+    const getWebviewUriString = (path: vscode.Uri) => {
+      return this.webviewPanel.webview.asWebviewUri(path).toString();
     };
 
     for (const source of description.sources)
-      source.uri = getSourceUri(source.path, source.filename);
+      source.uri = getWebviewUriString(vscode.Uri.joinPath(
+        document.uri, "/../", source.path, source.filename));
 
     for (const texture of description.textures)
-      texture.uri = getTextureUri(texture.path, texture.filename);
+      texture.uri = getWebviewUriString(vscode.Uri.joinPath(
+        vscode.Uri.file(texture.path), texture.filename));
 
     this.webviewPanel.webview.postMessage({
       type: "setConfig",

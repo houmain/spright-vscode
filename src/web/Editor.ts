@@ -11,7 +11,6 @@ enum EditorType {
 }
 
 type Options = {
-  editorType: EditorType;
   sheetIndex: number;
   zoomLevel: number;
   filter?: string;
@@ -49,6 +48,7 @@ export class Editor {
   private preload: HTMLElement;
 
   constructor(
+    private readonly editorType: EditorType,
     private toolbar: HTMLElement,
     private content: HTMLElement,
     private properties: HTMLElement,
@@ -57,7 +57,6 @@ export class Editor {
   ) {
 
     this.options = {
-      editorType: EditorType.Input,
       showId: true,
       showRect: true,
       showInputFilename: true,
@@ -122,10 +121,6 @@ export class Editor {
 
   public onMessage(message: any) {
     switch (message.type) {
-      case "setEditorType":
-        this.options.editorType = message.editorType;
-        break;
-
       case "setConfig":
         this.setConfig(message.config, message.description);
         break;
@@ -237,7 +232,7 @@ export class Editor {
       });
     });
 
-    if (this.options.editorType == EditorType.Input) {
+    if (this.editorType == EditorType.Input) {
       const completeButton = utils.appendElement(itemsDiv, "button", "complete");
       completeButton.innerText = "complete";
       utils.addClickHandler(completeButton, () => {
@@ -258,7 +253,7 @@ export class Editor {
       this.onStateChanged();
     });
 
-    if (this.options.editorType == EditorType.Input) {
+    if (this.editorType == EditorType.Input) {
       this.filter = utils.appendTextbox(itemsDiv, "filter", "  Filter:");
       this.filter.type = "search";
       utils.addInputHandler(this.filter, () => { this.onFilterChanged(); });
@@ -600,7 +595,7 @@ export class Editor {
   }
 
   private rebuildView() {
-    if (this.options.editorType == EditorType.Input)
+    if (this.editorType == EditorType.Input)
       this.rebuildInputView();
     else
       this.rebuildOutputView();
@@ -681,10 +676,12 @@ export class Editor {
       if (!configInput)
         continue;
 
-      const spritesDiv = utils.appendElement(sourceFrameDiv, "div", "sprites");
-      for (const index of sourceSprites.spriteIndices) {
-        const sprite = this.description.sprites[index];
-        this.createSprite(sprite, spritesDiv);
+      if (this.description.sprites) {
+        const spritesDiv = utils.appendElement(sourceFrameDiv, "div", "sprites");
+        for (const index of sourceSprites.spriteIndices) {
+          const sprite = this.description.sprites[index];
+          this.createSprite(sprite, spritesDiv);
+        }
       }
     }
     return sourcesDiv;
@@ -754,7 +751,7 @@ export class Editor {
     const configInput = this.config.inputs[sprite.inputIndex];
     const configSprite = configInput.sprites[sprite.inputSpriteIndex];
 
-    const isInput = (this.options.editorType == EditorType.Input);
+    const isInput = (this.editorType == EditorType.Input);
     const rect = (isInput ? sprite.sourceRect : sprite.rect)!;
     const trimmedRect = (isInput ? sprite.trimmedSourceRect : sprite.trimmedRect);
 

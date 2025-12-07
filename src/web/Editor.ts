@@ -361,14 +361,26 @@ export class Editor {
   }
 
   private bindCheckbox(checkbox: HTMLInputElement, subject: Subject, definition: string) {
-    checkbox.checked = (this.config.hasEffectiveProperty(subject, definition) ?
-      this.config.getEffectivePropertyParameter(subject, definition, 0) || "true" : "false") === "true";
+    if (this.config.hasProperty(subject, definition))
+      checkbox.checked = (this.config.getPropertyParameter(subject, definition, 0) || "true") === "true";
+    else if (this.config.hasCommonProperty(subject, definition))
+      checkbox.indeterminate = (this.config.getCommonPropertyParameter(subject, definition, 0) || "true") === "true";
+    checkbox.dataset["wasIndeterminate"] = checkbox.indeterminate.toString();
+
     utils.addInputHandler(checkbox, () => {
-      if (!checkbox.checked) {
+      const wasIndeterminate = Boolean(checkbox.dataset["wasIndeterminate"]);
+      delete checkbox.dataset["wasIndeterminate"];
+      if (wasIndeterminate && checkbox.checked)
+        checkbox.checked = false;
+
+      const check = checkbox.checked;
+      const common = (this.config.hasCommonProperty(subject, definition) ?
+        (this.config.getCommonPropertyParameter(subject, definition, 0) || "true") : "false") === "true";
+      if ((!check && !common) || (check && common && !wasIndeterminate)) {
         this.config.removeProperty(subject, definition);
       }
       else {
-        this.config.setProperty(subject, definition, []);
+        this.config.setProperty(subject, definition, check ? [] : ["false"]);
       }
       this.updateConfig();
     });
@@ -444,6 +456,11 @@ export class Editor {
     });
   }
 
+  private appendCommonProperties(itemsDiv: HTMLElement, configSubject: Subject) {
+    const crop = utils.appendCheckbox(itemsDiv, "crop", "Crop", true);
+    this.bindCheckbox(crop, configSubject, "crop");
+  }
+
   private rebuildSheetProperties() {
     const itemsDiv = utils.createElement("div", "items");
     const configSheet = this.config.sheets[this.sheet.selectedIndex];
@@ -495,6 +512,8 @@ export class Editor {
 
     const square = utils.appendCheckbox(itemsDiv, "square", "Square", true);
     this.bindCheckbox(square, configSheet, "square");
+
+    this.appendCommonProperties(itemsDiv, this.config.defaultSheet);
 
     utils.replaceOrAppendChild(this.properties, itemsDiv);
   }
@@ -554,6 +573,8 @@ export class Editor {
       maxSprites.setPlaceholder(1000);
     }
 
+    this.appendCommonProperties(itemsDiv, configInput);
+
     if (currentInputType !== "sprite" || isSequenceFilename(input.filename)) {
       utils.appendElement(itemsDiv, "div", "dummy");
       const autoButton = utils.appendElement(itemsDiv, "button", "complete");
@@ -565,6 +586,7 @@ export class Editor {
         });
       });
     }
+
     utils.replaceOrAppendChild(this.properties, itemsDiv);
   }
 
@@ -589,6 +611,8 @@ export class Editor {
     const pivot = utils.appendPointEditor(itemsDiv, "sprite-pivot", "Pivot");
     this.bindPairEditor(pivot, configSprite, "pivot", true);
     pivot.setPlaceholder([sprite.pivot?.x, sprite.pivot?.y]);
+
+    this.appendCommonProperties(itemsDiv, configSprite);
 
     utils.replaceOrAppendChild(this.properties, itemsDiv);
     id.select();

@@ -106,7 +106,8 @@ function setLineParameters(line: ConfigLine, parameters: ParameterList) {
 }
 
 export class Config {
-  private defaultIndent: string;
+  private readonly defaultIndent: string;
+  public readonly defaultSheet: Sheet;
   private lines: ConfigLine[];
   public source: string;
   public sheets: Sheet[];
@@ -114,6 +115,7 @@ export class Config {
 
   constructor(source: string) {
     this.defaultIndent = "  ";
+    this.defaultSheet = { lineNo: -1 };
     this.lines = splitLines(source);
     this.source = source;
     this.sheets = [];
@@ -138,7 +140,7 @@ export class Config {
       }
     }
     if (!this.sheets.length)
-      this.sheets.push({ lineNo: -1 });
+      this.sheets.push(this.defaultSheet);
   }
 
   public updateSource() {
@@ -169,7 +171,8 @@ export class Config {
     for (let i = subject.lineNo + 1; i < this.lines.length; ++i) {
       const child = this.lines[i];
       if (child.level <= line.level) break;
-      if (child.definition == definition) return i;
+      if (child.level <= line.level + this.defaultIndent.length)
+        if (child.definition == definition) return i;
     }
   }
 
@@ -192,6 +195,8 @@ export class Config {
   }
 
   private findCommonPropertyLineNo(subject: Subject, definition: string) {
+    if (subject.lineNo < 0)
+      return;
     const line = this.getSubjectLine(subject);
     let belowLevel = line.level;
     for (let i = subject.lineNo - 1; i >= 0; --i) {

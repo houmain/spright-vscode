@@ -124,6 +124,16 @@ export function appendOption(select: HTMLSelectElement, value: string, text: str
   return option;
 }
 
+export function appendOptions(select: HTMLSelectElement,
+  keyValues: string[][], selectedKey?: string | ((value: string) => boolean)) {
+  for (const kv of keyValues) {
+    const selected = (typeof (selectedKey) === "function" ?
+      selectedKey(kv[0]) :
+      kv[0] === selectedKey);
+    appendOption(select, kv[0], kv[1], selected);
+  }
+}
+
 export function appendNumberEditor(parent: HTMLElement, className: string, text: string) {
   const label = appendElement(parent, "label", className) as HTMLLabelElement;
   label.textContent = text;

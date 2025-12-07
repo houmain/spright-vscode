@@ -147,6 +147,12 @@ export class Config {
     this.source = this.lines.map((x) => x.line).join("\n");
   }
 
+  public getDefinition(subject: Subject) {
+    if (subject.lineNo < 0)
+      return "";
+    return this.lines[subject.lineNo].definition;
+  }
+
   public getSubjectParameters(subject: Subject): ParameterList {
     const line = this.lines[subject.lineNo];
     return getLineParameters(line);

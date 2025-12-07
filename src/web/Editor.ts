@@ -339,6 +339,19 @@ export class Editor {
     utils.replaceOrAppendChild(this.properties, titleLabel);
   }
 
+  private bindTextbox(editor: HTMLInputElement, subject: Subject, definition: string) {
+    editor.value = this.config.getEffectivePropertyParameter(subject, definition, 0) || "";
+    utils.addInputHandler(editor, () => {
+      if (!editor.value) {
+        this.config.removeProperty(subject, definition);
+      }
+      else {
+        this.config.setProperty(subject, definition, [editor.value]);
+      }
+      this.updateConfig();
+    });
+  }
+
   private bindSubjectTextbox(editor: HTMLInputElement, subject: Subject) {
     editor.value = this.config.getSubjectParameter(subject, 0);
     utils.addInputHandler(editor, () => {
@@ -457,6 +470,28 @@ export class Editor {
   }
 
   private appendCommonProperties(itemsDiv: HTMLElement, configSubject: Subject) {
+    const subjectType = this.config.getDefinition(configSubject);
+
+    if (subjectType !== "sprite") {
+      const id = utils.appendTextbox(itemsDiv, "editor", "Sprite-ID");
+      this.bindTextbox(id, configSubject, "id");
+    }
+
+    const trim = utils.appendSelect(itemsDiv, "trim", "Trim");
+    utils.appendOptions(trim, [
+      ["", ""],
+      ["none", "None"],
+      ["rect", "Rect"],
+      ["convex", "Convex"],
+    ]);
+    this.bindSelect(trim, configSubject, "trim");
+
+    const trimThreshold = utils.appendNumberEditor(itemsDiv, "editor", "Trim-Threshold");
+    this.bindNumberEditor(trimThreshold, configSubject, "trim-threshold");
+
+    const extrude = utils.appendNumberEditor(itemsDiv, "extrude", "Extrude");
+    this.bindNumberEditor(extrude, configSubject, "extrude");
+
     const crop = utils.appendCheckbox(itemsDiv, "crop", "Crop", true);
     this.bindCheckbox(crop, configSubject, "crop");
   }
@@ -465,8 +500,8 @@ export class Editor {
     const itemsDiv = utils.createElement("div", "items");
     const configSheet = this.config.sheets[this.sheet.selectedIndex];
 
-    const packSelect = utils.appendSelect(itemsDiv, "pack", "Pack");
-    const types = [
+    const pack = utils.appendSelect(itemsDiv, "pack", "Pack");
+    utils.appendOptions(pack, [
       ["", ""],
       ["binpack", "Bin-Pack"],
       ["rows", "Rows"],
@@ -476,21 +511,17 @@ export class Editor {
       ["single", "Single"],
       ["layers", "Layers"],
       ["keep", "Keep"],
-    ];
-    for (const type of types)
-      utils.appendOption(packSelect, type[0], type[1]);
-    this.bindSelect(packSelect, configSheet, "pack");
+    ]);
+    this.bindSelect(pack, configSheet, "pack");
 
-    const duplicatesSelect = utils.appendSelect(itemsDiv, "duplicates", "Duplicates");
-    const deplicatesModes = [
+    const duplicates = utils.appendSelect(itemsDiv, "duplicates", "Duplicates");
+    utils.appendOptions(duplicates, [
       ["", ""],
       ["keep", "Keep"],
       ["share", "Share"],
       ["drop", "Drop"],
-    ];
-    for (const dup of deplicatesModes)
-      utils.appendOption(duplicatesSelect, dup[0], dup[1]);
-    this.bindSelect(duplicatesSelect, configSheet, "duplicates");
+    ]);
+    this.bindSelect(duplicates, configSheet, "duplicates");
 
     const padding = utils.appendPairEditor(itemsDiv, "padding", "Padding Inner", "Outer").setMin(0);
     this.bindPairEditor(padding, configSheet, "padding");
@@ -521,15 +552,14 @@ export class Editor {
   private rebuildInputProperties(input: Input, configInput: ConfigInput) {
     const currentInputType = this.config.getInputType(configInput);
     const itemsDiv = utils.createElement("div", "items");
-    const typeSelect = utils.appendSelect(itemsDiv, "type", "Type");
-    const types = [
+
+    const type = utils.appendSelect(itemsDiv, "type", "Type");
+    utils.appendOptions(type, [
       ["sprite", "Single Sprite"],
       ["atlas", "Atlas"],
       ["grid", "Grid (Cell-Size)"],
       ["grid-cells", "Grid (Cell-Count)"],
-    ];
-    for (const type of types)
-      utils.appendOption(typeSelect, type[0], type[1], currentInputType.startsWith(type[0]));
+    ], (key: string) => { return currentInputType.startsWith(key); });
 
     let gridVertical: HTMLInputElement | undefined;
     if (currentInputType.startsWith("grid")) {
@@ -544,9 +574,9 @@ export class Editor {
       await this.updateConfig();
       this.rebuildInputProperties(input, configInput);
     };
-    utils.addChangeHandler(typeSelect, replaceInputType);
+    utils.addChangeHandler(type, replaceInputType);
     if (gridVertical)
-      utils.addInputHandler(gridVertical, () => { replaceInputType(typeSelect.value); });
+      utils.addInputHandler(gridVertical, () => { replaceInputType(type.value); });
 
     if (currentInputType == "grid" || currentInputType == "grid-vertical") {
       const grid = utils.appendPointEditor(itemsDiv, currentInputType, "Cell-Size").setMin(1);
@@ -573,8 +603,6 @@ export class Editor {
       maxSprites.setPlaceholder(1000);
     }
 
-    this.appendCommonProperties(itemsDiv, configInput);
-
     if (currentInputType !== "sprite" || isSequenceFilename(input.filename)) {
       utils.appendElement(itemsDiv, "div", "dummy");
       const autoButton = utils.appendElement(itemsDiv, "button", "complete");
@@ -587,6 +615,8 @@ export class Editor {
       });
     }
 
+    this.appendCommonProperties(itemsDiv, configInput);
+
     utils.replaceOrAppendChild(this.properties, itemsDiv);
   }
 
@@ -596,7 +626,8 @@ export class Editor {
 
     const id = utils.appendTextbox(itemsDiv, "sprite-id", "ID");
     this.bindSubjectTextbox(id, configSprite);
-    id.placeholder = sprite.id;
+    if (id.value.length == 0)
+      id.placeholder = sprite.id;
 
     if (currentInputType.startsWith("grid")) {
       const span = utils.appendPointEditor(itemsDiv, "sprite-span", "Cell-Span").setMin(1);

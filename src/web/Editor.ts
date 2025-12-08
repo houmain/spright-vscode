@@ -85,7 +85,7 @@ export class Editor {
       this.hideProperties();
     });
     utils.addRightClickHandler(this.content, (event: MouseEvent) => {
-      this.showProperties(event, "Sheet");
+      this.showProperties(event);
       this.rebuildSheetProperties();
     });
     this.content.addEventListener("scroll", () => {
@@ -324,7 +324,7 @@ export class Editor {
     this.properties.style.visibility = "hidden";
   }
 
-  private showProperties(event: MouseEvent, title: string) {
+  private showProperties(event: MouseEvent) {
     const offX = 0;
     const offY = 2;
     const width = this.properties.getBoundingClientRect().width;
@@ -333,10 +333,6 @@ export class Editor {
     this.properties.style.visibility = "visible";
     this.properties.style.left = left + "px";
     this.properties.style.top = top + "px";
-
-    const titleLabel = utils.createElement("label", "title");
-    titleLabel.textContent = title;
-    utils.replaceOrAppendChild(this.properties, titleLabel);
   }
 
   private bindTextbox(editor: HTMLInputElement, subject: Subject, definition: string) {
@@ -469,11 +465,23 @@ export class Editor {
     });
   }
 
-  private appendCommonProperties(itemsDiv: HTMLElement, configSubject: Subject) {
+  private appendCommonSpriteProperties(itemsDiv: HTMLElement, configSubject: Subject) {
     const subjectType = this.config.getDefinition(configSubject);
 
+    if (subjectType !== "sprite")
+      utils.appendTitle(itemsDiv, "Sprites");
+
+    if (subjectType !== "" && subjectType !== "sheet") {
+      const sheetSelect = utils.appendSelect(itemsDiv, "sheet", "Sheet");
+      for (const sheet of this.config.sheets) {
+        const name = this.config.getSubjectParameter(sheet, 0);
+        utils.appendOption(sheetSelect, name, name);
+      }
+      this.bindSelect(sheetSelect, configSubject, "sheet");
+    }
+
     if (subjectType !== "sprite") {
-      const id = utils.appendTextbox(itemsDiv, "editor", "Sprite-ID");
+      const id = utils.appendTextbox(itemsDiv, "sprite-id", "ID");
       this.bindTextbox(id, configSubject, "id");
     }
 
@@ -486,7 +494,7 @@ export class Editor {
     ]);
     this.bindSelect(trim, configSubject, "trim");
 
-    const trimThreshold = utils.appendNumberEditor(itemsDiv, "editor", "Trim-Threshold");
+    const trimThreshold = utils.appendNumberEditor(itemsDiv, "trim-threshold", "Trim-Threshold");
     this.bindNumberEditor(trimThreshold, configSubject, "trim-threshold");
 
     const extrude = utils.appendNumberEditor(itemsDiv, "extrude", "Extrude");
@@ -499,6 +507,8 @@ export class Editor {
   private rebuildSheetProperties() {
     const itemsDiv = utils.createElement("div", "items");
     const configSheet = this.config.sheets[this.sheet.selectedIndex];
+
+    utils.appendTitle(itemsDiv, "Sheet");
 
     const pack = utils.appendSelect(itemsDiv, "pack", "Pack");
     utils.appendOptions(pack, [
@@ -544,7 +554,7 @@ export class Editor {
     const square = utils.appendCheckbox(itemsDiv, "square", "Square", true);
     this.bindCheckbox(square, configSheet, "square");
 
-    this.appendCommonProperties(itemsDiv, this.config.defaultSheet);
+    this.appendCommonSpriteProperties(itemsDiv, this.config.defaultSheet);
 
     utils.replaceOrAppendChild(this.properties, itemsDiv);
   }
@@ -552,6 +562,8 @@ export class Editor {
   private rebuildInputProperties(input: Input, configInput: ConfigInput) {
     const currentInputType = this.config.getInputType(configInput);
     const itemsDiv = utils.createElement("div", "items");
+
+    utils.appendTitle(itemsDiv, "Input");
 
     const type = utils.appendSelect(itemsDiv, "type", "Type");
     utils.appendOptions(type, [
@@ -615,7 +627,7 @@ export class Editor {
       });
     }
 
-    this.appendCommonProperties(itemsDiv, configInput);
+    this.appendCommonSpriteProperties(itemsDiv, configInput);
 
     utils.replaceOrAppendChild(this.properties, itemsDiv);
   }
@@ -623,6 +635,8 @@ export class Editor {
   private rebuildSpriteProperties(sprite: Sprite, configSprite: ConfigSprite, configInput: ConfigInput) {
     const currentInputType = this.config.getInputType(configInput);
     const itemsDiv = utils.createElement("div", "items");
+
+    utils.appendTitle(itemsDiv, "Sprite");
 
     const id = utils.appendTextbox(itemsDiv, "sprite-id", "ID");
     this.bindSubjectTextbox(id, configSprite);
@@ -643,7 +657,7 @@ export class Editor {
     this.bindPairEditor(pivot, configSprite, "pivot", true);
     pivot.setPlaceholder([sprite.pivot?.x, sprite.pivot?.y]);
 
-    this.appendCommonProperties(itemsDiv, configSprite);
+    this.appendCommonSpriteProperties(itemsDiv, configSprite);
 
     utils.replaceOrAppendChild(this.properties, itemsDiv);
     id.select();
@@ -674,7 +688,7 @@ export class Editor {
 
       if (configInput)
         utils.addRightClickHandler(inputDiv, (event: MouseEvent) => {
-          this.showProperties(event, "Input");
+          this.showProperties(event);
           this.rebuildInputProperties(input, configInput);
         });
       utils.addClickHandler(inputDiv, () => {
@@ -840,7 +854,7 @@ export class Editor {
 
     if (configSprite) {
       utils.addRightClickHandler(spriteDiv, (event: MouseEvent) => {
-        this.showProperties(event, "Sprite");
+        this.showProperties(event);
         this.rebuildSpriteProperties(sprite, configSprite, configInput);
       });
       utils.addClickHandler(spriteDiv, () => {

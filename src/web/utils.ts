@@ -107,6 +107,12 @@ export class PairEditor {
   }
 }
 
+export function appendTitle(parent: HTMLElement, title: string) {
+  const titleLabel = appendElement(parent, "label", "title");
+  titleLabel.textContent = title;
+  appendElement(parent, "div", "dummy");
+}
+
 export function appendSelect(parent: HTMLElement, className: string, text: string) {
   const label = appendElement(parent, "label", className) as HTMLLabelElement;
   label.textContent = text;

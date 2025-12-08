@@ -59,6 +59,7 @@ body {
 }
 
 #properties .title {
+  justify-self: left;
   text-transform: uppercase;
   font-size: 0.8em;
   font-weight: bold;

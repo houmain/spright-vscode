@@ -33,6 +33,13 @@ export type Rect = {
   h: number;
 };
 
+export type Margin = {
+  l: number;
+  t: number;
+  r: number;
+  b: number;
+};
+
 export type Sprite = {
   index: number;
   id: string;
@@ -47,6 +54,7 @@ export type Sprite = {
   sliceSpriteIndex?: number;
   rect?: Rect;
   pivot?: Point;
+  margin?: Margin;
   rotated?: boolean;
   trimmedRect?: Rect;
   trimmedSourceRect?: Rect;

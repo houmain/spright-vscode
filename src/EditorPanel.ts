@@ -46,7 +46,7 @@ export enum EditorType {
 }
 
 export class EditorPanel {
-  private static instances: any = [];
+  private static instances: (EditorPanel | undefined)[] = [];
 
   private readonly webviewPanel: vscode.WebviewPanel;
   private activeDocumentChangedSubscription: vscode.Disposable | undefined;
@@ -76,11 +76,17 @@ export class EditorPanel {
       for (const folder of vscode.workspace.workspaceFolders)
         resourceRoots.push(folder.uri);
 
+    // open beside existing editor instance
+    let viewColumn = vscode.ViewColumn.Beside;
+    for (const instance of EditorPanel.instances)
+      if (instance && instance.webviewPanel.viewColumn)
+        viewColumn = instance.webviewPanel.viewColumn + 1;
+
     this.webviewPanel = vscode.window.createWebviewPanel(
       (editorType == EditorType.Input ? "spright.input" : "spright.output"),
       (editorType == EditorType.Input ? "Spright Input" : "Spright Output"),
       {
-        viewColumn: vscode.ViewColumn.Beside,
+        viewColumn: viewColumn,
         preserveFocus: true,
       },
       {

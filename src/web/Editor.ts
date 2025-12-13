@@ -1,7 +1,7 @@
 
 import * as utils from "./utils";
 import { Config, Sheet as ConfigSheet, Input as ConfigInput, Sprite as ConfigSprite, Subject } from "./Config";
-import { Description, Input, Sprite, Point } from "./Description";
+import { Description, Input, Sprite, Point, Rect } from "./Description";
 
 const zoomLevels = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 8, 10];
 
@@ -15,10 +15,11 @@ type Options = {
   zoomLevel: number;
   filter?: string;
   showId: boolean;
-  showRect: boolean;
+  showBounds: boolean;
   showPivot: boolean;
+  showRect: boolean;
   showTrimmedRect: boolean;
-  showInputFilename: boolean;
+  showFilename: boolean;
 };
 
 type State = {
@@ -59,7 +60,7 @@ export class Editor {
     this.options = {
       showId: true,
       showRect: true,
-      showInputFilename: true,
+      showFilename: true,
       zoomLevel: 2,
     } as Options;
 
@@ -203,7 +204,7 @@ export class Editor {
     this.postMessage({
       type: "refreshDescription",
       sheetDescriptionNeeded: (
-        this.options.showPivot || this.options.showTrimmedRect
+        this.options.showPivot || this.options.showTrimmedRect || this.options.showBounds
       ),
     });
   }
@@ -274,10 +275,11 @@ export class Editor {
     const showLabel = utils.appendElement(showDiv, "label", "show-label");
     showLabel.innerText = "  Show:";
 
-    const showInputFilename = utils.appendCheckbox(showDiv, "show-filename", "filename");
-    showInputFilename.checked = this.options.showInputFilename;
-    utils.addClickHandler(showInputFilename, () => {
-      this.options.showInputFilename = showInputFilename.checked;
+    const showFilename = utils.appendCheckbox(showDiv, "show-filename",
+      (this.editorType == EditorType.Input ? "input-filename" : "output-filename"));
+    showFilename.checked = this.options.showFilename;
+    utils.addClickHandler(showFilename, () => {
+      this.options.showFilename = showFilename.checked;
       this.onStateChanged();
       this.rebuildView();
     });
@@ -290,14 +292,26 @@ export class Editor {
       this.rebuildView();
     });
 
-    const showRect = utils.appendCheckbox(showDiv, "show-rect", "rect");
+    const showRect = utils.appendCheckbox(showDiv, "show-rect",
+      (this.editorType == EditorType.Input ? "source-rect" : "rect"));
     showRect.checked = this.options.showRect;
     utils.addClickHandler(showRect, () => {
       this.options.showRect = showRect.checked;
       this.onStateChanged();
     });
 
-    const showTrimmedRect = utils.appendCheckbox(showDiv, "show-trimmed-rect", "trimmed-rect");
+    if (this.editorType == EditorType.Output) {
+      const showBounds = utils.appendCheckbox(showDiv, "show-bounds", "bounds");
+      showBounds.checked = this.options.showBounds;
+      utils.addClickHandler(showBounds, () => {
+        this.options.showBounds = showBounds.checked;
+        this.onStateChanged();
+        this.refreshDescription(true);
+      });
+    }
+
+    const showTrimmedRect = utils.appendCheckbox(showDiv, "show-trimmed-source-rect",
+      (this.editorType == EditorType.Input ? "trimmed-source-rect" : "trimmed-rect"));
     showTrimmedRect.checked = this.options.showTrimmedRect;
     utils.addClickHandler(showTrimmedRect, () => {
       this.options.showTrimmedRect = showTrimmedRect.checked;
@@ -497,11 +511,29 @@ export class Editor {
     const trimThreshold = utils.appendNumberEditor(itemsDiv, "trim-threshold", "Trim-Threshold");
     this.bindNumberEditor(trimThreshold, configSubject, "trim-threshold");
 
+    const crop = utils.appendCheckbox(itemsDiv, "crop", "Crop", true);
+    this.bindCheckbox(crop, configSubject, "crop");
+
+    const cropPivot = utils.appendCheckbox(itemsDiv, "crop-pivot", "Crop Pivot", true);
+    this.bindCheckbox(cropPivot, configSubject, "crop-pivot");
+
     const extrude = utils.appendNumberEditor(itemsDiv, "extrude", "Extrude");
     this.bindNumberEditor(extrude, configSubject, "extrude");
 
-    const crop = utils.appendCheckbox(itemsDiv, "crop", "Crop", true);
-    this.bindCheckbox(crop, configSubject, "crop");
+    const minBounds = utils.appendPairEditor(itemsDiv, "min-size", "Min. Size X", "Y");
+    this.bindPairEditor(minBounds, configSubject, "min-size");
+
+    const divisibleBounds = utils.appendPairEditor(itemsDiv, "divisible-size", "Divisible Size X", "Y");
+    this.bindPairEditor(divisibleBounds, configSubject, "divisible-size");
+
+    const commonBounds = utils.appendTextbox(itemsDiv, "common-size", "Common Size Tag");
+    this.bindTextbox(commonBounds, configSubject, "common-size");
+
+    const align = utils.appendPairEditor(itemsDiv, "align", "Align X", "Y");
+    this.bindPairEditor(align, configSubject, "align");
+
+    const alignPivot = utils.appendTextbox(itemsDiv, "align-pivot", "Align Pivot Tag");
+    this.bindTextbox(alignPivot, configSubject, "align-pivot");
   }
 
   private rebuildSheetProperties() {
@@ -700,7 +732,7 @@ export class Editor {
         });
       });
 
-      if (this.options.showInputFilename) {
+      if (this.options.showFilename) {
         const titleDiv = utils.appendElement(inputDiv, "div", "title");
         const textDiv = utils.appendElement(titleDiv, "div", "text");
         textDiv.innerText = input.filename;
@@ -782,7 +814,7 @@ export class Editor {
           sizeString += ` - ${maxSize.x}x${maxSize.y}`;
         const title = `${output.filename} (${sizeString})`;
 
-        if (this.options.showInputFilename) {
+        if (this.options.showFilename) {
           const titleDiv = utils.appendElement(outputDiv, "div", "title");
           const textDiv = utils.appendElement(titleDiv, "div", "text");
           textDiv.innerText = title;
@@ -824,6 +856,17 @@ export class Editor {
     const rect = (isInput ? sprite.sourceRect : sprite.rect)!;
     const trimmedRect = (isInput ? sprite.trimmedSourceRect : sprite.trimmedRect);
 
+    if (this.options.showBounds) {
+      const bounds: Rect = { ...rect };
+      if (sprite.margin) {
+        bounds.x -= sprite.margin.l;
+        bounds.y -= sprite.margin.t;
+        bounds.w += sprite.margin.l + sprite.margin.r;
+        bounds.h += sprite.margin.t + sprite.margin.b;
+      }
+      utils.appendRect(spritesDiv, bounds, "bounds", sprite.rotated);
+    }
+
     if (this.options.showTrimmedRect && trimmedRect)
       utils.appendRect(spritesDiv, trimmedRect, "trimmed-rect", !isInput && sprite.rotated);
 
@@ -831,20 +874,18 @@ export class Editor {
       configSprite ? "sprite" : "sprite deduced", !isInput && sprite.rotated);
     spriteDiv.title = sprite.id;
 
-    if (this.options.showPivot &&
-      sprite.pivot &&
-      trimmedRect &&
-      sprite.rect &&
-      sprite.trimmedRect) {
-      let px = trimmedRect.x + sprite.pivot.x;
-      let py = trimmedRect.y + sprite.pivot.y;
+    if (this.options.showPivot && sprite.pivot && rect) {
+      let pivot: Point = { ...sprite.pivot };
       if (isInput) {
-        px += (sprite.rect.x - sprite.trimmedRect.x);
-        py += (sprite.rect.y - sprite.trimmedRect.y);
+        pivot.x += (sprite.trimmedSourceRect!.x - sprite.sourceRect!.x);
+        pivot.y += (sprite.trimmedSourceRect!.y - sprite.sourceRect!.y);
+      }
+      else if (sprite.rotated) {
+        pivot = utils.rotateClockwise(pivot, rect.h);
       }
       const pivotDiv = utils.appendElement(spritesDiv, "div", "pivot");
-      pivotDiv.style.setProperty("--x", px + "px");
-      pivotDiv.style.setProperty("--y", py + "px");
+      pivotDiv.style.setProperty("--x", (rect.x + pivot.x) + "px");
+      pivotDiv.style.setProperty("--y", (rect.y + pivot.y) + "px");
     }
 
     if (this.options.showId) {

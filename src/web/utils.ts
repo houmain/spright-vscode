@@ -1,4 +1,11 @@
-import { Rect } from "./Description";
+import { Rect, Point } from "./Description";
+
+export function rotateClockwise(point: Point, width: number): Point {
+  return {
+    x: width - point.y,
+    y: point.x
+  };
+}
 
 export function stripQuotes(text: string) {
   if (text.length > 1 && (text[0] == '"' || text[0] == "'") && text[0] == text[text.length - 1])

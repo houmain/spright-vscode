@@ -56,6 +56,8 @@ body {
   border: 1px solid var(--vscode-menu-border);
   background: var(--vscode-menu-background);
   filter: drop-shadow(4px 4px 4px #00000033);
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 #properties .title {
@@ -198,6 +200,15 @@ body.vscode-dark .source .frame {
 .trimmed-rect {
   position: absolute;
   border: 2px dashed blue;
+  left: calc(var(--rect_x) * var(--zoom));
+  top: calc(var(--rect_y) * var(--zoom));
+  width: calc(var(--rect_w) * var(--zoom));
+  height: calc(var(--rect_h) * var(--zoom));
+}
+
+.bounds {
+  position: absolute;
+  border: 2px solid blue;
   left: calc(var(--rect_x) * var(--zoom));
   top: calc(var(--rect_y) * var(--zoom));
   width: calc(var(--rect_w) * var(--zoom));

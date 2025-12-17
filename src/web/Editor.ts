@@ -1,7 +1,7 @@
 
 import * as utils from "./utils";
 import { Config, Sheet as ConfigSheet, Input as ConfigInput, Sprite as ConfigSprite, Subject } from "./Config";
-import { Description, Input, Sprite, Point, Rect } from "./Description";
+import { Description, Input, Sprite, Point, Rect, Margin } from "./Description";
 
 const zoomLevels = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 8, 10];
 
@@ -32,6 +32,22 @@ type State = {
 
 function isSequenceFilename(filename: string) {
   return filename.indexOf('{') != -1;
+}
+
+function getBounds(rect: Rect, margin: Margin, rotateMargin?: boolean): Rect {
+  if (rotateMargin)
+    margin = {
+      l: margin.b,
+      t: margin.l,
+      r: margin.t,
+      b: margin.r,
+    };
+  return {
+    x: rect.x - margin.l,
+    y: rect.y - margin.t,
+    w: rect.w + (rotateMargin ? margin.t + margin.b : margin.l + margin.r),
+    h: rect.h + (rotateMargin ? margin.l + margin.r : margin.t + margin.b),
+  };
 }
 
 export class Editor {
@@ -808,10 +824,10 @@ export class Editor {
 
         let sizeString = "";
         if (output.textureIndices.length > 1)
-          sizeString += `${output.textureIndices.length} x `;
-        sizeString += `${minSize.x}x${minSize.y}`;
+          sizeString += `${output.textureIndices.length}x `;
+        sizeString += `${minSize.x} x ${minSize.y}`;
         if (minSize.x != maxSize.x || minSize.y != maxSize.y)
-          sizeString += ` - ${maxSize.x}x${maxSize.y}`;
+          sizeString += ` - ${maxSize.x} x ${maxSize.y}`;
         const title = `${output.filename} (${sizeString})`;
 
         if (this.options.showFilename) {
@@ -856,15 +872,11 @@ export class Editor {
     const rect = (isInput ? sprite.sourceRect : sprite.rect)!;
     const trimmedRect = (isInput ? sprite.trimmedSourceRect : sprite.trimmedRect);
 
+    let title = sprite.id;
     if (this.options.showBounds) {
-      const bounds: Rect = { ...rect };
-      if (sprite.margin) {
-        bounds.x -= sprite.margin.l;
-        bounds.y -= sprite.margin.t;
-        bounds.w += sprite.margin.l + sprite.margin.r;
-        bounds.h += sprite.margin.t + sprite.margin.b;
-      }
+      const bounds = getBounds(rect, sprite.margin!, sprite.rotated);
       utils.appendRect(spritesDiv, bounds, "bounds", sprite.rotated);
+      title += `\nbounds: ${bounds.w} x ${bounds.h}`;
     }
 
     if (this.options.showTrimmedRect && trimmedRect)
@@ -872,7 +884,6 @@ export class Editor {
 
     const spriteDiv = utils.appendRect(spritesDiv, rect,
       configSprite ? "sprite" : "sprite deduced", !isInput && sprite.rotated);
-    spriteDiv.title = sprite.id;
 
     if (this.options.showPivot && sprite.pivot && rect) {
       let pivot: Point = { ...sprite.pivot };
@@ -886,7 +897,13 @@ export class Editor {
       const pivotDiv = utils.appendElement(spritesDiv, "div", "pivot");
       pivotDiv.style.setProperty("--x", (rect.x + pivot.x) + "px");
       pivotDiv.style.setProperty("--y", (rect.y + pivot.y) + "px");
+      title += `\npivot: ${sprite.pivot.x}, ${sprite.pivot.y}`;
     }
+
+    if (sprite.rotated)
+      title += "\nrotated";
+
+    spriteDiv.title = title;
 
     if (this.options.showId) {
       const textDiv = utils.appendElement(spriteDiv, "div", "text");

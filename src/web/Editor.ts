@@ -358,11 +358,13 @@ export class Editor {
     const offX = 0;
     const offY = 2;
     const width = this.properties.getBoundingClientRect().width;
-    const left = event.clientX + window.scrollX + (event.clientX + width + 100 > window.innerWidth ? -width - offX : offX);
-    const top = event.clientY + window.scrollY + offY;
+    const left = Math.max(0, event.clientX + (event.clientX + width + 100 > window.innerWidth ? -width - offX : offX));
+    const top = Math.max(0, event.clientY + offY);
     this.properties.style.visibility = "visible";
     this.properties.style.left = left + "px";
     this.properties.style.top = top + "px";
+    this.properties.style.maxHeight = Math.max(window.innerHeight - top - 20, 100) + "px";
+    this.properties.scrollTop = 0;
   }
 
   private bindTextbox(editor: HTMLInputElement, subject: Subject, definition: string) {
@@ -524,7 +526,7 @@ export class Editor {
     ]);
     this.bindSelect(trim, configSubject, "trim");
 
-    const trimThreshold = utils.appendNumberEditor(itemsDiv, "trim-threshold", "Trim-Threshold");
+    const trimThreshold = utils.appendNumberEditor(itemsDiv, "trim-threshold", "Trim-Threshold").setMin(0);
     this.bindNumberEditor(trimThreshold, configSubject, "trim-threshold");
 
     const crop = utils.appendCheckbox(itemsDiv, "crop", "Crop", true);
@@ -533,19 +535,19 @@ export class Editor {
     const cropPivot = utils.appendCheckbox(itemsDiv, "crop-pivot", "Crop Pivot", true);
     this.bindCheckbox(cropPivot, configSubject, "crop-pivot");
 
-    const extrude = utils.appendNumberEditor(itemsDiv, "extrude", "Extrude");
+    const extrude = utils.appendNumberEditor(itemsDiv, "extrude", "Extrude").setMin(0);
     this.bindNumberEditor(extrude, configSubject, "extrude");
 
-    const minBounds = utils.appendPairEditor(itemsDiv, "min-size", "Min. Size X", "Y");
+    const minBounds = utils.appendPairEditor(itemsDiv, "min-size", "Min. Size X", "Y").setMin(1);
     this.bindPairEditor(minBounds, configSubject, "min-size");
 
-    const divisibleBounds = utils.appendPairEditor(itemsDiv, "divisible-size", "Divisible Size X", "Y");
+    const divisibleBounds = utils.appendPairEditor(itemsDiv, "divisible-size", "Divisible Size X", "Y").setMin(1);
     this.bindPairEditor(divisibleBounds, configSubject, "divisible-size");
 
     const commonBounds = utils.appendTextbox(itemsDiv, "common-size", "Common Size Tag");
     this.bindTextbox(commonBounds, configSubject, "common-size");
 
-    const align = utils.appendPairEditor(itemsDiv, "align", "Align X", "Y");
+    const align = utils.appendPairEditor(itemsDiv, "align", "Align X", "Y").setMin(0);
     this.bindPairEditor(align, configSubject, "align");
 
     const alignPivot = utils.appendTextbox(itemsDiv, "align-pivot", "Align Pivot Tag");
@@ -872,7 +874,10 @@ export class Editor {
     const rect = (isInput ? sprite.sourceRect : sprite.rect)!;
     const trimmedRect = (isInput ? sprite.trimmedSourceRect : sprite.trimmedRect);
 
-    let title = sprite.id;
+    let title = `id: "${sprite.id}"`;
+    title += `\nposition: ${rect.x}, ${rect.y}`;
+    title += `\nsize: ${rect.w} x ${rect.h}`;
+
     if (this.options.showBounds) {
       const bounds = getBounds(rect, sprite.margin!, sprite.rotated);
       utils.appendRect(spritesDiv, bounds, "bounds", sprite.rotated);

@@ -56,7 +56,6 @@ body {
   border: 1px solid var(--vscode-menu-border);
   background: var(--vscode-menu-background);
   filter: drop-shadow(4px 4px 4px #00000033);
-  max-height: 300px;
   overflow-y: auto;
 }
 

@@ -58,7 +58,7 @@ export type Sprite = {
   rotated?: boolean;
   trimmedRect?: Rect;
   trimmedSourceRect?: Rect;
-  vertices?: Point[];
+  outline?: number[];
 };
 
 export type Sheet = {

@@ -1,8 +1,8 @@
 import { Rect, Point } from "./Description";
 
-export function rotateClockwise(point: Point, width: number): Point {
+export function rotateClockwise(point: Point, height: number): Point {
   return {
-    x: width - point.y,
+    x: height - point.y,
     y: point.x
   };
 }
@@ -48,6 +48,24 @@ export function appendRect(parent: HTMLElement, rect: Rect, className: string, r
   rectDiv.style.setProperty("--rect_w", (rotated ? rect.h : rect.w) + "px");
   rectDiv.style.setProperty("--rect_h", (rotated ? rect.w : rect.h) + "px");
   return rectDiv;
+}
+
+export function appendPolygon(parent: HTMLElement, points: number[], size: Point, className: string, rotated?: boolean) {
+  const polygonDiv = appendElement(parent, "div", className);
+  polygonDiv.style.setProperty("--rect_w", (rotated ? size.y : size.x) + "px");
+  polygonDiv.style.setProperty("--rect_h", (rotated ? size.x : size.y) + "px");
+  const cwStrings: string[] = [];
+  for (let i = 0; i < points.length; i += 2) {
+    let point = {
+      x: points[i] / size.x * 100,
+      y: points[i + 1] / size.y * 100
+    };
+    if (rotated)
+      point = rotateClockwise(point, 100);
+    cwStrings.push(`${point.x}% ${point.y}%`);
+  }
+  polygonDiv.style.clipPath = `polygon(${cwStrings.join(',')})`;
+  return polygonDiv;
 }
 
 export class NumberEditor {

@@ -19,6 +19,7 @@ type Options = {
   showPivot: boolean;
   showRect: boolean;
   showTrimmedRect: boolean;
+  showOutline: boolean;
   showFilename: boolean;
 };
 
@@ -220,7 +221,7 @@ export class Editor {
     this.postMessage({
       type: "refreshDescription",
       sheetDescriptionNeeded: (
-        this.options.showPivot || this.options.showTrimmedRect || this.options.showBounds
+        this.options.showPivot || this.options.showTrimmedRect
       ),
     });
   }
@@ -326,14 +327,25 @@ export class Editor {
       });
     }
 
-    const showTrimmedRect = utils.appendCheckbox(showDiv, "show-trimmed-source-rect",
-      (this.editorType == EditorType.Input ? "trimmed-source-rect" : "trimmed-rect"));
-    showTrimmedRect.checked = this.options.showTrimmedRect;
-    utils.addClickHandler(showTrimmedRect, () => {
-      this.options.showTrimmedRect = showTrimmedRect.checked;
-      this.onStateChanged();
-      this.refreshDescription(true);
-    });
+    if (this.editorType == EditorType.Output) {
+      const showOutline = utils.appendCheckbox(showDiv, "show-outline", "outline");
+      showOutline.checked = this.options.showOutline;
+      utils.addClickHandler(showOutline, () => {
+        this.options.showOutline = showOutline.checked;
+        this.onStateChanged();
+        this.refreshDescription(true);
+      });
+    }
+
+    if (this.editorType == EditorType.Input) {
+      const showTrimmedRect = utils.appendCheckbox(showDiv, "show-trimmed-source-rect", "trimmed-source-rect");
+      showTrimmedRect.checked = this.options.showTrimmedRect;
+      utils.addClickHandler(showTrimmedRect, () => {
+        this.options.showTrimmedRect = showTrimmedRect.checked;
+        this.onStateChanged();
+        this.refreshDescription(true);
+      });
+    }
 
     const showPivot = utils.appendCheckbox(showDiv, "show-pivot", "pivot");
     showPivot.checked = this.options.showPivot;
@@ -889,6 +901,10 @@ export class Editor {
 
     const spriteDiv = utils.appendRect(spritesDiv, rect,
       configSprite ? "sprite" : "sprite deduced", !isInput && sprite.rotated);
+
+    if (this.options.showOutline && sprite.outline)
+      utils.appendPolygon(spriteDiv, sprite.outline,
+        { x: rect.w, y: rect.h }, "outline", sprite.rotated);
 
     if (this.options.showPivot && sprite.pivot && rect) {
       let pivot: Point = { ...sprite.pivot };

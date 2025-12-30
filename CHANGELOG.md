@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Version 2.2.0] - 2025-12-30
+
+### Added
+
+- Added Output preview panel.
+- Added _Show Spright Output panel_ command. <kbd>Ctrl-Shift-O</kbd>.
+- Added sheet property editor.
+
+### Changed
+
+- The shortcut for _Show Spright Input panel_ was changed to <kbd>Ctrl-Shift-I</kbd>.
+- Updated default spright version to 4.0.0.
+
 ## [Version 2.1.0] - 2025-11-28
 
 ### Added
@@ -45,6 +58,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Updated default spright version to 3.5.4.
 
+[version 2.2.0]: https://github.com/houmain/spright/compare/2.1.0...2.2.0
 [version 2.1.0]: https://github.com/houmain/spright/compare/2.0.0...2.1.0
 [version 2.0.0]: https://github.com/houmain/spright/compare/1.3.0...2.0.0
 [version 1.3.0]: https://github.com/houmain/spright/compare/1.2.4...1.3.0

@@ -6,7 +6,9 @@ This extension provides an advanced editor for [Spright](https://github.com/houm
 
 - Files named `spright.conf` are automatically detected as _Spright Configuration_, for others it can be selected using _Change Language Mode_ . <kbd>Ctrl-K M</kbd>
 
-- A graphical editor of the configuration can be opened using _Show Spright editor panel_. <kbd>Ctrl-Shift-E</kbd> <br> Right clicking on sprites, inputs or the background opens property editors.
+- A graphical editor of the configuration can be opened using _Show Spright Input panel_. <kbd>Ctrl-Shift-I</kbd> <br> Right clicking on sprites, inputs or the background opens property editors.
+
+- A preview of the output can be opened using _Show Spright Output panel_. <kbd>Ctrl-Shift-O</kbd>
 
 - Sheet building can be triggered using _Build Spright output_. <kbd>Ctrl-Shift-B</kbd>
 

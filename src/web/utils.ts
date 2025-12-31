@@ -51,21 +51,30 @@ export function appendRect(parent: HTMLElement, rect: Rect, className: string, r
 }
 
 export function appendPolygon(parent: HTMLElement, points: number[], size: Point, className: string, rotated?: boolean) {
-  const polygonDiv = appendElement(parent, "div", className);
-  polygonDiv.style.setProperty("--rect_w", (rotated ? size.y : size.x) + "px");
-  polygonDiv.style.setProperty("--rect_h", (rotated ? size.x : size.y) + "px");
+  const svgNamespace = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNamespace, "svg");
+  svg.setAttribute("class", className);
+  svg.setAttribute("viewBox", `0 0 ${size.x} ${size.y}`);
   const cwStrings: string[] = [];
   for (let i = 0; i < points.length; i += 2) {
     let point = {
-      x: points[i] / size.x * 100,
-      y: points[i + 1] / size.y * 100
+      x: points[i],
+      y: points[i + 1]
     };
     if (rotated)
-      point = rotateClockwise(point, 100);
-    cwStrings.push(`${point.x}% ${point.y}%`);
+      point = rotateClockwise(point, size.y);
+    cwStrings.push(`${point.x},${point.y}`);
   }
-  polygonDiv.style.clipPath = `polygon(${cwStrings.join(',')})`;
-  return polygonDiv;
+  const polygon = document.createElementNS(svgNamespace, "polygon");
+  polygon.setAttribute("points", cwStrings.join(" "));
+  polygon.setAttribute("stroke", "blue");
+  polygon.setAttribute("fill", "none");
+  polygon.setAttribute("stroke-width", "0.5");
+  svg.appendChild(polygon);
+  parent.appendChild(svg);
+  svg.style.setProperty("--rect_w", (rotated ? size.y : size.x) + "px");
+  svg.style.setProperty("--rect_h", (rotated ? size.x : size.y) + "px");
+  return svg;
 }
 
 export class NumberEditor {

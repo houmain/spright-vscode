@@ -219,7 +219,6 @@ body.vscode-dark .source .frame {
 .outline {
   pointer-events: none;
   position: absolute;
-  background-color: #0000FF99;
   width: calc(var(--rect_w) * var(--zoom));
   height: calc(var(--rect_h) * var(--zoom));
 }

@@ -2,7 +2,7 @@
   "name": "spright-vscode",
   "displayName": "Spright Configuration Editor",
   "description": "Editor for spright configurations",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "publisher": "houmain",
   "author": {
     "name": "Albert Kalchmair"

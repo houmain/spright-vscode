@@ -40,7 +40,12 @@ body {
 }
 
 #toolbar input[type="checkbox"] {
-  margin-left: 4px;
+  margin: 0px;
+}
+
+#toolbar label {
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
 #properties {
@@ -62,7 +67,7 @@ body {
 #properties .title {
   justify-self: left;
   text-transform: uppercase;
-  font-size: 0.8em;
+  font-size: 0.9em;
   font-weight: bold;
   opacity: 0.7;
 }
@@ -119,7 +124,6 @@ body {
   margin-top: 4px;
   margin-left: 4px;
   gap: 10px;
-  --pivot-size: calc(var(--zoom) * 2px);
 }
 
 .input {
@@ -182,6 +186,7 @@ body.vscode-dark .source .frame {
 .sprite:hover {
   background-color: #0053ff2b;
   border: 1px solid #0055ff5b;
+  z-index: 11;
 }
 
 .sprite .text {
@@ -209,7 +214,7 @@ body.vscode-dark .source .frame {
 .bounds {
   pointer-events: none;
   position: absolute;
-  border: 2px solid blue;
+  border: 2px dashed blue;
   left: calc(var(--rect_x) * var(--zoom));
   top: calc(var(--rect_y) * var(--zoom));
   width: calc(var(--rect_w) * var(--zoom));
@@ -219,6 +224,8 @@ body.vscode-dark .source .frame {
 .outline {
   pointer-events: none;
   position: absolute;
+  left: calc(var(--rect_x) * var(--zoom));
+  top: calc(var(--rect_y) * var(--zoom));
   width: calc(var(--rect_w) * var(--zoom));
   height: calc(var(--rect_h) * var(--zoom));
 }
@@ -226,11 +233,11 @@ body.vscode-dark .source .frame {
 .pivot {
   pointer-events: none;
   position: absolute;
-  margin: calc(var(--pivot-size) / -2);
   left: calc(var(--x) * var(--zoom));
   top: calc(var(--y) * var(--zoom));
-  width: var(--pivot-size);
-  height: var(--pivot-size);
+  width: 8px;
+  height: 8px;
+  margin: -4px;
   border-radius: 100%;
   background-color: rgba(255, 255, 0, 0.5);
   border: 1px solid black;
@@ -244,7 +251,6 @@ body.vscode-dark .source .frame {
   margin-top: 4px;
   margin-left: 4px;
   gap: 10px;
-  --pivot-size: calc(var(--zoom) * 2px);
 }
 
 .output {

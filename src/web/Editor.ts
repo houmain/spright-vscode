@@ -903,8 +903,7 @@ export class Editor {
       configSprite ? "sprite" : "sprite deduced", !isInput && sprite.rotated);
 
     if (this.options.showOutline && sprite.outline)
-      utils.appendPolygon(spriteDiv, sprite.outline,
-        { x: rect.w, y: rect.h }, "outline", sprite.rotated);
+      utils.appendPolygon(spritesDiv, sprite.outline, rect, "outline", sprite.rotated);
 
     if (this.options.showPivot && sprite.pivot && rect) {
       let pivot: Point = { ...sprite.pivot };

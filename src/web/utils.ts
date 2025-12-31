@@ -50,11 +50,12 @@ export function appendRect(parent: HTMLElement, rect: Rect, className: string, r
   return rectDiv;
 }
 
-export function appendPolygon(parent: HTMLElement, points: number[], size: Point, className: string, rotated?: boolean) {
+export function appendPolygon(parent: HTMLElement, points: number[], rect: Rect, className: string, rotated?: boolean) {
   const svgNamespace = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(svgNamespace, "svg");
   svg.setAttribute("class", className);
-  svg.setAttribute("viewBox", `0 0 ${size.x} ${size.y}`);
+  svg.setAttribute("viewBox", `0.125 0.125 ${rect.w} ${rect.h}`);
+  svg.setAttribute("overflow", "visible");
   const cwStrings: string[] = [];
   for (let i = 0; i < points.length; i += 2) {
     let point = {
@@ -62,18 +63,21 @@ export function appendPolygon(parent: HTMLElement, points: number[], size: Point
       y: points[i + 1]
     };
     if (rotated)
-      point = rotateClockwise(point, size.y);
+      point = rotateClockwise(point, rect.h);
     cwStrings.push(`${point.x},${point.y}`);
   }
   const polygon = document.createElementNS(svgNamespace, "polygon");
+  polygon.setAttribute("vector-effect", "non-scaling-stroke");
   polygon.setAttribute("points", cwStrings.join(" "));
   polygon.setAttribute("stroke", "blue");
   polygon.setAttribute("fill", "none");
-  polygon.setAttribute("stroke-width", "0.5");
+  polygon.setAttribute("stroke-width", "2.0");
   svg.appendChild(polygon);
   parent.appendChild(svg);
-  svg.style.setProperty("--rect_w", (rotated ? size.y : size.x) + "px");
-  svg.style.setProperty("--rect_h", (rotated ? size.x : size.y) + "px");
+  svg.style.setProperty("--rect_x", rect.x + "px");
+  svg.style.setProperty("--rect_y", rect.y + "px");
+  svg.style.setProperty("--rect_w", (rotated ? rect.h : rect.w) + "px");
+  svg.style.setProperty("--rect_h", (rotated ? rect.w : rect.h) + "px");
   return svg;
 }
 
